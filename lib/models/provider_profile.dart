@@ -50,6 +50,8 @@ class ProviderProfile {
   final String registrationNumber;
   final String contactPerson;
   final String workplace;
+  final String linkedInstitutionId;
+  final String linkedInstitutionName;
   final String phone;
   final String email;
   final String address;
@@ -72,6 +74,8 @@ class ProviderProfile {
     required this.registrationNumber,
     required this.contactPerson,
     required this.workplace,
+    this.linkedInstitutionId = '',
+    this.linkedInstitutionName = '',
     required this.phone,
     required this.email,
     required this.address,
@@ -116,6 +120,8 @@ class ProviderProfile {
     String? registrationNumber,
     String? contactPerson,
     String? workplace,
+    String? linkedInstitutionId,
+    String? linkedInstitutionName,
     String? phone,
     String? email,
     String? address,
@@ -137,6 +143,8 @@ class ProviderProfile {
     registrationNumber: registrationNumber ?? this.registrationNumber,
     contactPerson: contactPerson ?? this.contactPerson,
     workplace: workplace ?? this.workplace,
+    linkedInstitutionId: linkedInstitutionId ?? this.linkedInstitutionId,
+    linkedInstitutionName: linkedInstitutionName ?? this.linkedInstitutionName,
     phone: phone ?? this.phone,
     email: email ?? this.email,
     address: address ?? this.address,
@@ -165,6 +173,8 @@ class ProviderProfile {
       registrationNumber: text('registrationNumber'),
       contactPerson: text('contactPerson'),
       workplace: text('workplace'),
+      linkedInstitutionId: text('linkedInstitutionId'),
+      linkedInstitutionName: text('linkedInstitutionName'),
       phone: text('phone'),
       email: text('email'),
       address: text('address'),
@@ -199,6 +209,12 @@ class ProviderProfile {
     'registrationNumber': registrationNumber.trim(),
     'contactPerson': contactPerson.trim(),
     'workplace': workplace.trim(),
+    'linkedInstitutionId': accountType == ProviderAccountType.professional
+        ? linkedInstitutionId.trim()
+        : '',
+    'linkedInstitutionName': accountType == ProviderAccountType.professional
+        ? linkedInstitutionName.trim()
+        : '',
     'phone': phone.trim(),
     'email': email.trim(),
     'address': address.trim(),
@@ -220,6 +236,8 @@ class ProviderProfile {
           'nomComplet': displayName.trim(),
           'specialite': category.trim(),
           'etablissement': workplace.trim(),
+          'institutionId': linkedInstitutionId.trim(),
+          'institutionName': linkedInstitutionName.trim(),
           'biographie': description.trim(),
           'experience': experience.trim(),
           'qualification': qualifications.trim(),

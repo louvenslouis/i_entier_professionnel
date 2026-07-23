@@ -6,6 +6,7 @@ import '../data/professional_repository.dart';
 import '../models/provider_profile.dart';
 import '../theme/pro_theme.dart';
 import 'appointments_screen.dart';
+import 'institution_link_screen.dart';
 import 'registration_screen.dart';
 
 class ProDashboardScreen extends StatefulWidget {
@@ -80,6 +81,8 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final desktop = constraints.maxWidth >= 900;
+      final isProfessional =
+          widget.profile.accountType == ProviderAccountType.professional;
       final content = switch (_selectedIndex) {
         0 => _DashboardOverview(
           profile: widget.profile,
@@ -91,6 +94,10 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
         1 => ProAppointmentsScreen(
           profile: widget.profile,
           repository: _appointmentRepository,
+        ),
+        2 when isProfessional => InstitutionLinkScreen(
+          profile: widget.profile,
+          repository: widget.repository,
         ),
         _ => _ProfilePreview(profile: widget.profile, onEdit: _editProfile),
       };
@@ -143,18 +150,24 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
                 selectedIndex: _selectedIndex,
                 onDestinationSelected: (value) =>
                     setState(() => _selectedIndex = value),
-                destinations: const [
-                  NavigationDestination(
+                destinations: [
+                  const NavigationDestination(
                     icon: Icon(Icons.dashboard_outlined),
                     selectedIcon: Icon(Icons.dashboard_rounded),
                     label: 'Tableau de bord',
                   ),
-                  NavigationDestination(
+                  const NavigationDestination(
                     icon: Icon(Icons.calendar_month_outlined),
                     selectedIcon: Icon(Icons.calendar_month_rounded),
                     label: 'Rendez-vous',
                   ),
-                  NavigationDestination(
+                  if (isProfessional)
+                    const NavigationDestination(
+                      icon: Icon(Icons.domain_outlined),
+                      selectedIcon: Icon(Icons.domain_rounded),
+                      label: 'Institution',
+                    ),
+                  const NavigationDestination(
                     icon: Icon(Icons.badge_outlined),
                     selectedIcon: Icon(Icons.badge_rounded),
                     label: 'Ma fiche',
@@ -206,11 +219,24 @@ class _DashboardSidebar extends StatelessWidget {
           onTap: () => onSelected(1),
         ),
         const SizedBox(height: 8),
+        if (profile.accountType == ProviderAccountType.professional) ...[
+          _SidebarItem(
+            icon: Icons.domain_outlined,
+            label: 'Mon institution',
+            selected: selectedIndex == 2,
+            onTap: () => onSelected(2),
+          ),
+          const SizedBox(height: 8),
+        ],
         _SidebarItem(
           icon: Icons.badge_outlined,
           label: 'Ma fiche publique',
-          selected: selectedIndex == 2,
-          onTap: () => onSelected(2),
+          selected:
+              selectedIndex ==
+              (profile.accountType == ProviderAccountType.professional ? 3 : 2),
+          onTap: () => onSelected(
+            profile.accountType == ProviderAccountType.professional ? 3 : 2,
+          ),
         ),
         const Spacer(),
         const Divider(color: ProColors.border),
@@ -691,6 +717,11 @@ class _ProfileSummary extends StatelessWidget {
           icon: Icons.medical_services_outlined,
           label: profile.category,
         ),
+        if (profile.accountType == ProviderAccountType.professional)
+          _SummaryLine(
+            icon: Icons.domain_outlined,
+            label: profile.linkedInstitutionName,
+          ),
         _SummaryLine(icon: Icons.location_on_outlined, label: profile.address),
         _SummaryLine(icon: Icons.phone_outlined, label: profile.phone),
         _SummaryLine(icon: Icons.schedule_outlined, label: profile.schedule),

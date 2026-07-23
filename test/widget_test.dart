@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:i_entier_professionnel/data/appointment_repository.dart';
 import 'package:i_entier_professionnel/data/professional_repository.dart';
 import 'package:i_entier_professionnel/models/appointment_request.dart';
+import 'package:i_entier_professionnel/models/health_institution.dart';
 import 'package:i_entier_professionnel/models/provider_profile.dart';
 import 'package:i_entier_professionnel/screens/dashboard_screen.dart';
 import 'package:i_entier_professionnel/screens/registration_screen.dart';
@@ -14,6 +15,17 @@ class FakeProfessionalRepository implements ProfessionalRepository {
   ProviderProfile? updated;
   bool? visibility;
   bool? availability;
+  HealthInstitution? linkedInstitution;
+  bool unlinked = false;
+  List<HealthInstitution> institutions = const [];
+
+  @override
+  Future<void> linkInstitution(
+    ProviderProfile profile,
+    HealthInstitution institution,
+  ) async {
+    linkedInstitution = institution;
+  }
 
   @override
   Future<void> setAvailability(ProviderProfile profile, bool available) async {
@@ -34,6 +46,15 @@ class FakeProfessionalRepository implements ProfessionalRepository {
   Future<void> updateProfile(ProviderProfile profile) async {
     updated = profile;
   }
+
+  @override
+  Future<void> unlinkInstitution(ProviderProfile profile) async {
+    unlinked = true;
+  }
+
+  @override
+  Stream<List<HealthInstitution>> watchInstitutions() =>
+      Stream.value(institutions);
 
   @override
   Stream<ProviderProfile?> watchProfile(String uid) => Stream.value(submitted);
@@ -212,6 +233,65 @@ void main() {
     await tester.pump();
 
     expect(repository.visibility, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('recherche et lie le personnel à une institution existante', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = FakeProfessionalRepository()
+      ..institutions = const [
+        HealthInstitution(
+          id: 'institution-1',
+          name: 'Clinique Espoir',
+          type: 'Clinique',
+          address: 'Pétion-Ville, Ouest',
+          phone: '+509 2222-0000',
+        ),
+        HealthInstitution(
+          id: 'institution-2',
+          name: 'Hôpital Saint Marc',
+          type: 'Hôpital',
+          address: 'Saint-Marc, Artibonite',
+          phone: '+509 3333-0000',
+        ),
+      ];
+
+    await tester.pumpWidget(
+      app(
+        ProDashboardScreen(
+          profile: profile(status: ProviderVerificationStatus.approved),
+          repository: repository,
+          onSignOut: () async {},
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Mon institution'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rechercher une institution'), findsOneWidget);
+    expect(find.text('Clinique Espoir'), findsOneWidget);
+    expect(find.text('Hôpital Saint Marc'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('institution-search-field')),
+      'saint marc',
+    );
+    await tester.pump();
+
+    expect(find.text('Clinique Espoir'), findsNothing);
+    expect(find.text('Hôpital Saint Marc'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey('link-institution-institution-2')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.linkedInstitution?.id, 'institution-2');
+    expect(find.textContaining('maintenant lié'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

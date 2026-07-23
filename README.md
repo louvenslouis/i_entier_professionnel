@@ -18,6 +18,7 @@ dans les collections déjà lues par l’annuaire patient.
 - tableau de bord responsive mobile/web ;
 - modification du profil ;
 - gestion de la visibilité et de la disponibilité ;
+- recherche d’une institution existante et liaison au profil d’un personnel ;
 - réception des demandes de rendez-vous envoyées par les patients ;
 - validation, annulation ou maintien en attente avec notification du patient ;
 - aperçu de la fiche destinée aux patients.
@@ -29,6 +30,12 @@ retire de l’annuaire public sans supprimer le profil professionnel privé.
 Les réservations sont partagées dans `appointments/{id}`. Lorsqu’une demande
 est confirmée ou annulée, la décision et la notification du patient sont
 enregistrées dans une même opération Firestore.
+
+Un personnel de santé peut rechercher les fiches publiées de la collection
+`institution` depuis la page **Mon institution**. La relation est enregistrée
+dans `providerProfiles/{uid}` avec `linkedInstitutionId` et
+`linkedInstitutionName`, puis synchronisée vers sa fiche `personnelMedical`
+lorsque celle-ci est publiée.
 
 ## Lancer le projet
 
