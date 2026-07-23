@@ -63,14 +63,15 @@ function validProviderProfile(data) {
     && data.updatedAt is timestamp;
 }
 
-function providerIsVerified(type) {
-  let profile = get(
+function providerMayPublish(type) {
+  let profile = getAfter(
     /databases/$(database)/documents/providerProfiles/$(request.auth.uid)
   );
   return signedIn()
     && profile.data.ownerUid == request.auth.uid
     && profile.data.accountType == type
-    && profile.data.verificationStatus == 'approved';
+    && profile.data.verificationStatus == 'approved'
+    && profile.data.isVisible == true;
 }
 
 match /providerProfiles/{providerId} {
@@ -156,13 +157,13 @@ function validProfessionalDirectory(data, ownerId) {
 function validInstitutionDirectory(data, ownerId) {
   return data.keys().hasOnly([
       'ownerUid', 'nom', 'type', 'description', 'services', 'horaires',
-      'adresse', 'telephone', 'email', 'isPublished', 'verificationStatus',
-      'createdAt', 'updatedAt'
+      'adresse', 'telephone', 'email', 'disponible', 'isPublished',
+      'verificationStatus', 'createdAt', 'updatedAt'
     ])
     && data.keys().hasAll([
       'ownerUid', 'nom', 'type', 'description', 'services', 'horaires',
-      'adresse', 'telephone', 'email', 'isPublished', 'verificationStatus',
-      'createdAt', 'updatedAt'
+      'adresse', 'telephone', 'email', 'disponible', 'isPublished',
+      'verificationStatus', 'createdAt', 'updatedAt'
     ])
     && data.ownerUid == ownerId
     && data.nom is string
@@ -183,6 +184,7 @@ function validInstitutionDirectory(data, ownerId) {
     && data.telephone.size() <= 40
     && data.email is string
     && data.email.size() <= 180
+    && data.disponible is bool
     && data.isPublished == true
     && data.verificationStatus == 'approved'
     && data.createdAt is timestamp
@@ -194,40 +196,38 @@ match /personnelMedical/{documentId} {
   allow read: if signedIn();
   allow create: if signedIn()
     && request.auth.uid == documentId
-    && providerIsVerified('professional')
+    && providerMayPublish('professional')
     && validProfessionalDirectory(request.resource.data, documentId)
     && request.resource.data.createdAt == request.time
     && request.resource.data.updatedAt == request.time;
   allow update: if signedIn()
     && request.auth.uid == documentId
     && resource.data.ownerUid == request.auth.uid
-    && providerIsVerified('professional')
+    && providerMayPublish('professional')
     && validProfessionalDirectory(request.resource.data, documentId)
     && request.resource.data.createdAt == resource.data.createdAt
     && request.resource.data.updatedAt == request.time;
   allow delete: if signedIn()
     && request.auth.uid == documentId
-    && resource.data.ownerUid == request.auth.uid
-    && providerIsVerified('professional');
+    && resource.data.ownerUid == request.auth.uid;
 }
 
 match /institution/{documentId} {
   allow read: if signedIn();
   allow create: if signedIn()
     && request.auth.uid == documentId
-    && providerIsVerified('institution')
+    && providerMayPublish('institution')
     && validInstitutionDirectory(request.resource.data, documentId)
     && request.resource.data.createdAt == request.time
     && request.resource.data.updatedAt == request.time;
   allow update: if signedIn()
     && request.auth.uid == documentId
     && resource.data.ownerUid == request.auth.uid
-    && providerIsVerified('institution')
+    && providerMayPublish('institution')
     && validInstitutionDirectory(request.resource.data, documentId)
     && request.resource.data.createdAt == resource.data.createdAt
     && request.resource.data.updatedAt == request.time;
   allow delete: if signedIn()
     && request.auth.uid == documentId
-    && resource.data.ownerUid == request.auth.uid
-    && providerIsVerified('institution');
+    && resource.data.ownerUid == request.auth.uid;
 }

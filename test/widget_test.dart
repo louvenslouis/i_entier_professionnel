@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:i_entier_professionnel/data/appointment_repository.dart';
 import 'package:i_entier_professionnel/data/professional_repository.dart';
+import 'package:i_entier_professionnel/models/appointment_request.dart';
 import 'package:i_entier_professionnel/models/provider_profile.dart';
 import 'package:i_entier_professionnel/screens/dashboard_screen.dart';
 import 'package:i_entier_professionnel/screens/registration_screen.dart';
@@ -37,6 +39,28 @@ class FakeProfessionalRepository implements ProfessionalRepository {
   Stream<ProviderProfile?> watchProfile(String uid) => Stream.value(submitted);
 }
 
+class FakeAppointmentRepository implements ProfessionalAppointmentRepository {
+  final List<ProfessionalAppointment> appointments;
+  ProfessionalAppointmentStatus? responseStatus;
+  String? responseNote;
+
+  FakeAppointmentRepository(this.appointments);
+
+  @override
+  Future<void> respond({
+    required ProfessionalAppointment appointment,
+    required ProfessionalAppointmentStatus status,
+    required String responseNote,
+  }) async {
+    responseStatus = status;
+    this.responseNote = responseNote;
+  }
+
+  @override
+  Stream<List<ProfessionalAppointment>> watchForProvider(String providerId) =>
+      Stream.value(appointments);
+}
+
 ProviderProfile profile({
   ProviderAccountType type = ProviderAccountType.professional,
   ProviderVerificationStatus status = ProviderVerificationStatus.pending,
@@ -67,6 +91,24 @@ ProviderProfile profile({
 );
 
 Widget app(Widget home) => MaterialApp(theme: buildProTheme(), home: home);
+
+ProfessionalAppointment appointment() => ProfessionalAppointment(
+  id: 'appointment-1',
+  patientId: 'patient-1',
+  patientName: 'Jean Baptiste',
+  providerId: 'provider-1',
+  providerType: 'professional',
+  providerName: 'Dr Marie Jean',
+  service: 'Consultation',
+  mode: ProfessionalAppointmentMode.video,
+  scheduledAt: DateTime(2026, 8, 4, 9, 30),
+  scheduleLabel: 'Lun–Ven, 8 h–16 h',
+  status: ProfessionalAppointmentStatus.pending,
+  patientNote: 'Consultation de suivi',
+  responseNote: '',
+  createdAt: DateTime(2026, 7, 22),
+  updatedAt: DateTime(2026, 7, 22),
+);
 
 void main() {
   testWidgets('affiche le portail professionnel distinct', (tester) async {
@@ -171,5 +213,66 @@ void main() {
 
     expect(repository.visibility, isTrue);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('permet de valider une demande et notifier le patient', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = FakeProfessionalRepository();
+    final appointments = FakeAppointmentRepository([appointment()]);
+
+    await tester.pumpWidget(
+      app(
+        ProDashboardScreen(
+          profile: profile(status: ProviderVerificationStatus.approved),
+          repository: repository,
+          appointmentRepository: appointments,
+          onSignOut: () async {},
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Rendez-vous'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Jean Baptiste'), findsOneWidget);
+    expect(find.text('Consultation de suivi'), findsOneWidget);
+    expect(find.text('Visioconférence'), findsOneWidget);
+    expect(find.text('En attente'), findsWidgets);
+
+    await tester.tap(find.text('Valider'));
+    await tester.pumpAndSettle();
+    expect(find.text('Valider le rendez-vous'), findsOneWidget);
+    expect(
+      find.text('Lien ou instructions de visioconférence'),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byType(TextField),
+      'Votre rendez-vous est confirmé.',
+    );
+    await tester.tap(find.text('Confirmer'));
+    await tester.pumpAndSettle();
+
+    expect(
+      appointments.responseStatus,
+      ProfessionalAppointmentStatus.confirmed,
+    );
+    expect(appointments.responseNote, 'Votre rendez-vous est confirmé.');
+    expect(find.textContaining('patient notifié'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('publie aussi la disponibilité des institutions', () {
+    final institution = profile(
+      type: ProviderAccountType.institution,
+      status: ProviderVerificationStatus.approved,
+      visible: true,
+    );
+
+    expect(institution.toDirectoryMap()['disponible'], isTrue);
   });
 }

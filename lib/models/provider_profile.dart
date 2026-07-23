@@ -243,6 +243,7 @@ class ProviderProfile {
           'adresse': address.trim(),
           'telephone': phone.trim(),
           'email': email.trim(),
+          'disponible': available,
           'isPublished': true,
           'verificationStatus': 'approved',
           'updatedAt': FieldValue.serverTimestamp(),

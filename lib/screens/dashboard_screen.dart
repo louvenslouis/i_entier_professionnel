@@ -1,20 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../data/appointment_repository.dart';
 import '../data/professional_repository.dart';
 import '../models/provider_profile.dart';
 import '../theme/pro_theme.dart';
+import 'appointments_screen.dart';
 import 'registration_screen.dart';
 
 class ProDashboardScreen extends StatefulWidget {
   final ProviderProfile profile;
   final ProfessionalRepository repository;
+  final ProfessionalAppointmentRepository? appointmentRepository;
   final Future<void> Function()? onSignOut;
 
   const ProDashboardScreen({
     super.key,
     required this.profile,
     required this.repository,
+    this.appointmentRepository,
     this.onSignOut,
   });
 
@@ -25,6 +29,9 @@ class ProDashboardScreen extends StatefulWidget {
 class _ProDashboardScreenState extends State<ProDashboardScreen> {
   int _selectedIndex = 0;
   bool _updating = false;
+  late final ProfessionalAppointmentRepository _appointmentRepository =
+      widget.appointmentRepository ??
+      FirestoreProfessionalAppointmentRepository();
 
   Future<void> _setVisibility(bool value) async {
     setState(() => _updating = true);
@@ -73,15 +80,20 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final desktop = constraints.maxWidth >= 900;
-      final content = _selectedIndex == 0
-          ? _DashboardOverview(
-              profile: widget.profile,
-              updating: _updating,
-              onVisibilityChanged: _setVisibility,
-              onAvailabilityChanged: _setAvailability,
-              onEdit: _editProfile,
-            )
-          : _ProfilePreview(profile: widget.profile, onEdit: _editProfile);
+      final content = switch (_selectedIndex) {
+        0 => _DashboardOverview(
+          profile: widget.profile,
+          updating: _updating,
+          onVisibilityChanged: _setVisibility,
+          onAvailabilityChanged: _setAvailability,
+          onEdit: _editProfile,
+        ),
+        1 => ProAppointmentsScreen(
+          profile: widget.profile,
+          repository: _appointmentRepository,
+        ),
+        _ => _ProfilePreview(profile: widget.profile, onEdit: _editProfile),
+      };
       return Scaffold(
         appBar: desktop
             ? null
@@ -138,6 +150,11 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
                     label: 'Tableau de bord',
                   ),
                   NavigationDestination(
+                    icon: Icon(Icons.calendar_month_outlined),
+                    selectedIcon: Icon(Icons.calendar_month_rounded),
+                    label: 'Rendez-vous',
+                  ),
+                  NavigationDestination(
                     icon: Icon(Icons.badge_outlined),
                     selectedIcon: Icon(Icons.badge_rounded),
                     label: 'Ma fiche',
@@ -183,10 +200,17 @@ class _DashboardSidebar extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _SidebarItem(
-          icon: Icons.badge_outlined,
-          label: 'Ma fiche publique',
+          icon: Icons.calendar_month_outlined,
+          label: 'Rendez-vous',
           selected: selectedIndex == 1,
           onTap: () => onSelected(1),
+        ),
+        const SizedBox(height: 8),
+        _SidebarItem(
+          icon: Icons.badge_outlined,
+          label: 'Ma fiche publique',
+          selected: selectedIndex == 2,
+          onTap: () => onSelected(2),
         ),
         const Spacer(),
         const Divider(color: ProColors.border),

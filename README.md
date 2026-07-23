@@ -18,12 +18,17 @@ dans les collections déjà lues par l’annuaire patient.
 - tableau de bord responsive mobile/web ;
 - modification du profil ;
 - gestion de la visibilité et de la disponibilité ;
+- réception des demandes de rendez-vous envoyées par les patients ;
+- validation, annulation ou maintien en attente avec notification du patient ;
 - aperçu de la fiche destinée aux patients.
 
 Les demandes complètes sont stockées dans `providerProfiles/{uid}`. Cette
 collection reste privée. Après validation, l’utilisateur peut publier sa fiche
 dans `personnelMedical/{uid}` ou `institution/{uid}`. Masquer une fiche la
 retire de l’annuaire public sans supprimer le profil professionnel privé.
+Les réservations sont partagées dans `appointments/{id}`. Lorsqu’une demande
+est confirmée ou annulée, la décision et la notification du patient sont
+enregistrées dans une même opération Firestore.
 
 ## Lancer le projet
 
@@ -52,9 +57,12 @@ Google Sign-In doit rester activé dans Firebase Authentication. Pour Android,
 ajoutez les empreintes SHA-1/SHA-256 des clés de signature avant une mise en
 production.
 
-Le fichier [docs/firestore_provider.rules](docs/firestore_provider.rules)
-contient les fonctions et blocs à fusionner dans le ruleset Firestore partagé.
-Il ne doit jamais être déployé seul, car le même ruleset protège aussi les
-données médicales de l’application patient. La validation d’un compte doit être
-effectuée par un backend Admin SDK ou manuellement par un administrateur : le
-client ne peut pas s’auto-attribuer le statut `approved`.
+Les règles professionnelles sont intégrées au ruleset partagé maintenu dans
+`../ientier/firestore.rules` et déployées sur le projet `i-entier`. Le fichier
+[docs/firestore_provider.rules](docs/firestore_provider.rules) en conserve le
+fragment de référence ; il ne doit jamais être déployé seul, car le même
+ruleset protège aussi les données médicales de l’application patient.
+
+La validation d’un compte doit être effectuée par un backend Admin SDK ou
+manuellement par un administrateur : le client ne peut pas s’auto-attribuer le
+statut `approved`.
