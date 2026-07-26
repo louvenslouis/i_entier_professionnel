@@ -36,6 +36,9 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
   bool _atProviderEnabled = false;
   bool _homeVisitEnabled = false;
   bool _videoEnabled = false;
+  bool _institutionPricesPublished = false;
+  late final Map<String, _AvailabilityConfiguration>
+  _availabilityConfigurations;
   String? _error;
 
   ProviderProfile? get _initial => widget.initialProfile;
@@ -48,6 +51,23 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
     _atProviderEnabled = _initial?.atProviderEnabled ?? false;
     _homeVisitEnabled = _initial?.homeVisitEnabled ?? false;
     _videoEnabled = _initial?.videoEnabled ?? false;
+    _institutionPricesPublished = _initial?.institutionPricesPublished ?? false;
+    _availabilityConfigurations = {
+      'inPerson': _AvailabilityConfiguration.fromStorage(
+        _initial?.availabilityConfigurations['inPerson'],
+        _initial?.atProviderSchedule.isNotEmpty == true
+            ? _initial!.atProviderSchedule
+            : _initial?.schedule ?? '',
+      ),
+      'homeVisit': _AvailabilityConfiguration.fromStorage(
+        _initial?.availabilityConfigurations['homeVisit'],
+        _initial?.homeVisitSchedule ?? '',
+      ),
+      'video': _AvailabilityConfiguration.fromStorage(
+        _initial?.availabilityConfigurations['video'],
+        _initial?.videoSchedule ?? '',
+      ),
+    };
     _controllers = {
       'displayName': TextEditingController(
         text: _initial?.displayName ?? widget.accountName,
@@ -72,18 +92,11 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
       ),
       'services': TextEditingController(text: _initial?.services ?? ''),
       'schedule': TextEditingController(text: _initial?.schedule ?? ''),
-      'atProviderSchedule': TextEditingController(
-        text: _initial?.atProviderSchedule.isNotEmpty == true
-            ? _initial!.atProviderSchedule
-            : _initial?.schedule ?? '',
-      ),
-      'homeVisitSchedule': TextEditingController(
-        text: _initial?.homeVisitSchedule ?? '',
-      ),
-      'videoSchedule': TextEditingController(
-        text: _initial?.videoSchedule ?? '',
-      ),
       'defaultPrice': TextEditingController(text: _initial?.defaultPrice ?? ''),
+      'servicePrices': TextEditingController(
+        text: _initial?.servicePrices ?? '',
+      ),
+      'roomPrices': TextEditingController(text: _initial?.roomPrices ?? ''),
     };
   }
 
@@ -97,13 +110,88 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
 
   String _text(String key) => _controllers[key]!.text.trim();
 
+  List<String> get _categorySuggestions =>
+      _accountType == ProviderAccountType.professional
+      ? const [
+          'Médecin généraliste',
+          'Pédiatre',
+          'Gynécologue-obstétricien',
+          'Cardiologue',
+          'Dermatologue',
+          'Psychologue',
+          'Infirmier·ère',
+          'Dentiste',
+          'Pharmacien·ne',
+          'Kinésithérapeute',
+        ]
+      : const [
+          'Hôpital',
+          'Clinique',
+          'Centre de santé',
+          'Laboratoire',
+          'Pharmacie',
+          'Cabinet médical',
+          'Centre de réadaptation',
+          'Centre de maternité',
+        ];
+
+  List<String> get _serviceSuggestions =>
+      _accountType == ProviderAccountType.professional
+      ? const [
+          'Consultation générale',
+          'Suivi médical',
+          'Dépistage',
+          'Vaccination',
+          'Soins infirmiers',
+          'Téléconsultation',
+          'Visite à domicile',
+          'Conseils de prévention',
+        ]
+      : const [
+          'Consultations',
+          'Urgences',
+          'Hospitalisation',
+          'Laboratoire et analyses',
+          'Imagerie médicale',
+          'Pharmacie',
+          'Vaccination',
+          'Maternité',
+          'Ambulance',
+        ];
+
+  List<String> _serviceValues() => _text('services')
+      .split(RegExp(r'[,;\n]'))
+      .map((value) => value.trim())
+      .where((value) => value.isNotEmpty)
+      .toList();
+
+  bool _hasService(String service) => _serviceValues().any(
+    (value) => value.toLowerCase() == service.toLowerCase(),
+  );
+
+  void _setCategory(String category, bool selected) =>
+      setState(() => _controllers['category']!.text = selected ? category : '');
+
+  void _toggleService(String service, bool selected) {
+    final values = _serviceValues();
+    values.removeWhere((value) => value.toLowerCase() == service.toLowerCase());
+    if (selected) values.add(service);
+    setState(() => _controllers['services']!.text = values.join(', '));
+  }
+
+  _AvailabilityConfiguration _availabilityFor(String mode) =>
+      _availabilityConfigurations[mode]!;
+
+  void _setAvailabilityConfiguration(
+    String mode,
+    _AvailabilityConfiguration configuration,
+  ) => setState(() => _availabilityConfigurations[mode] = configuration);
+
   String _professionalScheduleSummary() => [
-    if (_atProviderEnabled && _text('atProviderSchedule').isNotEmpty)
-      'Sur place : ${_text('atProviderSchedule')}',
-    if (_homeVisitEnabled && _text('homeVisitSchedule').isNotEmpty)
-      'À domicile : ${_text('homeVisitSchedule')}',
-    if (_videoEnabled && _text('videoSchedule').isNotEmpty)
-      'Visioconférence : ${_text('videoSchedule')}',
+    if (_atProviderEnabled) 'Sur place : ${_availabilityFor('inPerson').label}',
+    if (_homeVisitEnabled)
+      'À domicile : ${_availabilityFor('homeVisit').label}',
+    if (_videoEnabled) 'Visioconférence : ${_availabilityFor('video').label}',
   ].join('\n');
 
   ProviderProfile _buildProfile() => ProviderProfile(
@@ -125,17 +213,32 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
         ? _professionalScheduleSummary()
         : _text('schedule'),
     atProviderSchedule: _accountType == ProviderAccountType.professional
-        ? (_atProviderEnabled ? _text('atProviderSchedule') : '')
+        ? (_atProviderEnabled ? _availabilityFor('inPerson').label : '')
         : '',
     homeVisitSchedule: _accountType == ProviderAccountType.professional
-        ? (_homeVisitEnabled ? _text('homeVisitSchedule') : '')
+        ? (_homeVisitEnabled ? _availabilityFor('homeVisit').label : '')
         : '',
     videoSchedule: _accountType == ProviderAccountType.professional
-        ? (_videoEnabled ? _text('videoSchedule') : '')
+        ? (_videoEnabled ? _availabilityFor('video').label : '')
         : '',
     defaultPrice: _accountType == ProviderAccountType.professional
         ? _text('defaultPrice')
         : '',
+    institutionPricesPublished:
+        _accountType == ProviderAccountType.institution &&
+        _institutionPricesPublished,
+    servicePrices: _accountType == ProviderAccountType.institution
+        ? _text('servicePrices')
+        : '',
+    roomPrices: _accountType == ProviderAccountType.institution
+        ? _text('roomPrices')
+        : '',
+    availabilityConfigurations: _accountType == ProviderAccountType.professional
+        ? {
+            for (final entry in _availabilityConfigurations.entries)
+              entry.key: entry.value.toStorageMap(),
+          }
+        : const <String, Map<String, dynamic>>{},
     atProviderEnabled:
         _accountType == ProviderAccountType.professional && _atProviderEnabled,
     homeVisitEnabled:
@@ -281,6 +384,7 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
                               validator: _required,
                             ),
                             ProField(
+                              fieldKey: const ValueKey('category-field'),
                               controller: _controllers['category']!,
                               label:
                                   _accountType ==
@@ -318,6 +422,20 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
                                 hint: 'Cabinet, clinique ou hôpital',
                               ),
                           ],
+                        ),
+                        const SizedBox(height: 18),
+                        _SuggestedChoices(
+                          title:
+                              _accountType == ProviderAccountType.professional
+                              ? 'Spécialités suggérées'
+                              : 'Types d’institution suggérés',
+                          subtitle:
+                              'Cochez une suggestion ou saisissez une autre valeur dans le champ ci-dessus.',
+                          choices: _categorySuggestions,
+                          isSelected: (choice) =>
+                              _text('category').toLowerCase() ==
+                              choice.toLowerCase(),
+                          onChanged: _setCategory,
                         ),
                       ],
                     ),
@@ -397,6 +515,7 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
                               ),
                             ],
                             ProField(
+                              fieldKey: const ValueKey('services-field'),
                               controller: _controllers['services']!,
                               label: 'Services et expertises *',
                               hint:
@@ -415,6 +534,15 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
                               ),
                           ],
                         ),
+                        const SizedBox(height: 18),
+                        _SuggestedChoices(
+                          title: 'Services et expertises suggérés',
+                          subtitle:
+                              'Vous pouvez cocher plusieurs propositions et compléter librement le champ.',
+                          choices: _serviceSuggestions,
+                          isSelected: _hasService,
+                          onChanged: _toggleService,
+                        ),
                       ],
                     ),
                   ),
@@ -425,9 +553,9 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
                         atProviderEnabled: _atProviderEnabled,
                         homeVisitEnabled: _homeVisitEnabled,
                         videoEnabled: _videoEnabled,
-                        atProviderSchedule: _controllers['atProviderSchedule']!,
-                        homeVisitSchedule: _controllers['homeVisitSchedule']!,
-                        videoSchedule: _controllers['videoSchedule']!,
+                        atProviderConfiguration: _availabilityFor('inPerson'),
+                        homeVisitConfiguration: _availabilityFor('homeVisit'),
+                        videoConfiguration: _availabilityFor('video'),
                         defaultPrice: _controllers['defaultPrice']!,
                         onAtProviderEnabledChanged: _saving
                             ? null
@@ -440,8 +568,40 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
                         onVideoEnabledChanged: _saving
                             ? null
                             : (value) => setState(() => _videoEnabled = value),
+                        onAtProviderConfigurationChanged: _saving
+                            ? null
+                            : (configuration) => _setAvailabilityConfiguration(
+                                'inPerson',
+                                configuration,
+                              ),
+                        onHomeVisitConfigurationChanged: _saving
+                            ? null
+                            : (configuration) => _setAvailabilityConfiguration(
+                                'homeVisit',
+                                configuration,
+                              ),
+                        onVideoConfigurationChanged: _saving
+                            ? null
+                            : (configuration) => _setAvailabilityConfiguration(
+                                'video',
+                                configuration,
+                              ),
                         priceValidator: _priceValidator,
-                        requiredValidator: _required,
+                      ),
+                    ),
+                  ],
+                  if (_accountType == ProviderAccountType.institution) ...[
+                    const SizedBox(height: 18),
+                    ProPanel(
+                      child: _InstitutionPriceConfiguration(
+                        published: _institutionPricesPublished,
+                        servicePrices: _controllers['servicePrices']!,
+                        roomPrices: _controllers['roomPrices']!,
+                        onPublishedChanged: _saving
+                            ? null
+                            : (value) => setState(
+                                () => _institutionPricesPublished = value,
+                              ),
                       ),
                     ),
                   ],
@@ -795,33 +955,163 @@ class _ResponsiveFields extends StatelessWidget {
   );
 }
 
+class _SuggestedChoices extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final List<String> choices;
+  final bool Function(String choice) isSelected;
+  final void Function(String choice, bool selected) onChanged;
+
+  const _SuggestedChoices({
+    required this.title,
+    required this.subtitle,
+    required this.choices,
+    required this.isSelected,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: const TextStyle(
+          color: ProColors.ink,
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        subtitle,
+        style: const TextStyle(color: ProColors.muted, fontSize: 12),
+      ),
+      const SizedBox(height: 10),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final choice in choices)
+            FilterChip(
+              key: ValueKey('suggestion-$choice'),
+              label: Text(choice),
+              selected: isSelected(choice),
+              showCheckmark: true,
+              selectedColor: ProColors.primarySoft,
+              checkmarkColor: ProColors.primaryDark,
+              labelStyle: TextStyle(
+                color: isSelected(choice)
+                    ? ProColors.primaryDark
+                    : ProColors.ink,
+                fontWeight: isSelected(choice)
+                    ? FontWeight.w800
+                    : FontWeight.w600,
+              ),
+              onSelected: (selected) => onChanged(choice, selected),
+            ),
+        ],
+      ),
+    ],
+  );
+}
+
+class _InstitutionPriceConfiguration extends StatelessWidget {
+  final bool published;
+  final TextEditingController servicePrices;
+  final TextEditingController roomPrices;
+  final ValueChanged<bool>? onPublishedChanged;
+
+  const _InstitutionPriceConfiguration({
+    required this.published,
+    required this.servicePrices,
+    required this.roomPrices,
+    required this.onPublishedChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const _FormSectionTitle(
+        title: 'Tarifs de l’institution',
+        subtitle:
+            'Vous décidez si ces montants sont visibles par les patients dans l’annuaire.',
+      ),
+      const SizedBox(height: 10),
+      SwitchListTile.adaptive(
+        key: const ValueKey('institution-prices-published-switch'),
+        contentPadding: EdgeInsets.zero,
+        value: published,
+        onChanged: onPublishedChanged,
+        activeColor: ProColors.primary,
+        title: const Text(
+          'Publier les tarifs',
+          style: TextStyle(color: ProColors.ink, fontWeight: FontWeight.w800),
+        ),
+        subtitle: Text(
+          published
+              ? 'Les tarifs ci-dessous seront visibles publiquement.'
+              : 'Les tarifs restent privés et ne sont pas affichés dans l’annuaire.',
+        ),
+      ),
+      if (published) ...[
+        const SizedBox(height: 12),
+        ProField(
+          fieldKey: const ValueKey('institution-service-prices-field'),
+          controller: servicePrices,
+          label: 'Tarifs des services (HTG)',
+          hint: 'Ex. Consultation générale : 2 500\nÉchographie : 4 000',
+          maxLines: 4,
+          fullWidth: true,
+        ),
+        const SizedBox(height: 14),
+        ProField(
+          fieldKey: const ValueKey('institution-room-prices-field'),
+          controller: roomPrices,
+          label: 'Tarifs des chambres (HTG)',
+          hint: 'Ex. Chambre standard : 6 000 / nuit\nSuite : 12 000 / nuit',
+          maxLines: 4,
+          fullWidth: true,
+        ),
+      ],
+    ],
+  );
+}
+
 class _AppointmentModeConfiguration extends StatelessWidget {
   final bool atProviderEnabled;
   final bool homeVisitEnabled;
   final bool videoEnabled;
-  final TextEditingController atProviderSchedule;
-  final TextEditingController homeVisitSchedule;
-  final TextEditingController videoSchedule;
+  final _AvailabilityConfiguration atProviderConfiguration;
+  final _AvailabilityConfiguration homeVisitConfiguration;
+  final _AvailabilityConfiguration videoConfiguration;
   final TextEditingController defaultPrice;
   final ValueChanged<bool>? onAtProviderEnabledChanged;
   final ValueChanged<bool>? onHomeVisitEnabledChanged;
   final ValueChanged<bool>? onVideoEnabledChanged;
+  final ValueChanged<_AvailabilityConfiguration>?
+  onAtProviderConfigurationChanged;
+  final ValueChanged<_AvailabilityConfiguration>?
+  onHomeVisitConfigurationChanged;
+  final ValueChanged<_AvailabilityConfiguration>? onVideoConfigurationChanged;
   final String? Function(String?)? priceValidator;
-  final String? Function(String?) requiredValidator;
 
   const _AppointmentModeConfiguration({
     required this.atProviderEnabled,
     required this.homeVisitEnabled,
     required this.videoEnabled,
-    required this.atProviderSchedule,
-    required this.homeVisitSchedule,
-    required this.videoSchedule,
+    required this.atProviderConfiguration,
+    required this.homeVisitConfiguration,
+    required this.videoConfiguration,
     required this.defaultPrice,
     required this.onAtProviderEnabledChanged,
     required this.onHomeVisitEnabledChanged,
     required this.onVideoEnabledChanged,
+    required this.onAtProviderConfigurationChanged,
+    required this.onHomeVisitConfigurationChanged,
+    required this.onVideoConfigurationChanged,
     required this.priceValidator,
-    required this.requiredValidator,
   });
 
   @override
@@ -842,13 +1132,10 @@ class _AppointmentModeConfiguration extends StatelessWidget {
         enabled: atProviderEnabled,
         onChanged: onAtProviderEnabledChanged,
         scheduleField: atProviderEnabled
-            ? ProField(
-                fieldKey: const ValueKey('at-provider-schedule-field'),
-                controller: atProviderSchedule,
-                label: 'Disponibilité sur place *',
-                hint: 'Lun–Ven, 8 h–16 h',
-                maxLines: 2,
-                validator: requiredValidator,
+            ? _AvailabilityConfigurationEditor(
+                modeKey: 'inPerson',
+                configuration: atProviderConfiguration,
+                onChanged: onAtProviderConfigurationChanged,
               )
             : null,
       ),
@@ -861,13 +1148,10 @@ class _AppointmentModeConfiguration extends StatelessWidget {
         enabled: homeVisitEnabled,
         onChanged: onHomeVisitEnabledChanged,
         scheduleField: homeVisitEnabled
-            ? ProField(
-                fieldKey: const ValueKey('home-visit-schedule-field'),
-                controller: homeVisitSchedule,
-                label: 'Disponibilité à domicile *',
-                hint: 'Mar–Jeu, 9 h–15 h',
-                maxLines: 2,
-                validator: requiredValidator,
+            ? _AvailabilityConfigurationEditor(
+                modeKey: 'homeVisit',
+                configuration: homeVisitConfiguration,
+                onChanged: onHomeVisitConfigurationChanged,
               )
             : null,
       ),
@@ -880,13 +1164,10 @@ class _AppointmentModeConfiguration extends StatelessWidget {
         enabled: videoEnabled,
         onChanged: onVideoEnabledChanged,
         scheduleField: videoEnabled
-            ? ProField(
-                fieldKey: const ValueKey('video-schedule-field'),
-                controller: videoSchedule,
-                label: 'Disponibilité en visioconférence *',
-                hint: 'Lun–Sam, 17 h–20 h',
-                maxLines: 2,
-                validator: requiredValidator,
+            ? _AvailabilityConfigurationEditor(
+                modeKey: 'video',
+                configuration: videoConfiguration,
+                onChanged: onVideoConfigurationChanged,
               )
             : null,
       ),
@@ -967,6 +1248,325 @@ class _AppointmentModeSetting extends StatelessWidget {
       ],
     ],
   );
+}
+
+class _AvailabilityConfigurationEditor extends StatelessWidget {
+  final String modeKey;
+  final _AvailabilityConfiguration configuration;
+  final ValueChanged<_AvailabilityConfiguration>? onChanged;
+
+  const _AvailabilityConfigurationEditor({
+    required this.modeKey,
+    required this.configuration,
+    required this.onChanged,
+  });
+
+  Future<void> _pickTime(BuildContext context, {required bool opening}) async {
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: opening
+          ? configuration.openingTime
+          : configuration.closingTime,
+      helpText: opening ? 'Heure de début' : 'Heure de fin',
+    );
+    if (selected == null) return;
+    final updated = opening
+        ? configuration.copyWith(openingTime: selected)
+        : configuration.copyWith(closingTime: selected);
+    if (updated.closingMinutes <= updated.openingMinutes) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('L’heure de fin doit être après l’heure de début.'),
+          ),
+        );
+      }
+      return;
+    }
+    onChanged?.call(updated);
+  }
+
+  Future<void> _pickPeriod(BuildContext context) async {
+    final initialRange =
+        configuration.validFrom != null && configuration.validUntil != null
+        ? DateTimeRange(
+            start: configuration.validFrom!,
+            end: configuration.validUntil!,
+          )
+        : null;
+    final selected = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      initialDateRange: initialRange,
+      helpText: 'Période de disponibilité',
+      saveText: 'Appliquer',
+    );
+    if (selected != null) {
+      onChanged?.call(
+        configuration.copyWith(
+          validFrom: selected.start,
+          validUntil: selected.end,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Jours disponibles',
+        style: TextStyle(color: ProColors.ink, fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final day in _AvailabilityConfiguration.weekdayOptions)
+            FilterChip(
+              key: ValueKey('availability-$modeKey-day-${day.value}'),
+              label: Text(day.shortLabel),
+              selected: configuration.weekdays.contains(day.value),
+              showCheckmark: true,
+              selectedColor: ProColors.primarySoft,
+              checkmarkColor: ProColors.primaryDark,
+              onSelected: onChanged == null
+                  ? null
+                  : (selected) {
+                      final selectedDays = {...configuration.weekdays};
+                      if (selected) {
+                        selectedDays.add(day.value);
+                      } else if (selectedDays.length > 1) {
+                        selectedDays.remove(day.value);
+                      }
+                      onChanged?.call(
+                        configuration.copyWith(weekdays: selectedDays),
+                      );
+                    },
+            ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      const Text(
+        'Créneau horaire',
+        style: TextStyle(color: ProColors.ink, fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          OutlinedButton.icon(
+            key: ValueKey('availability-$modeKey-opening-time'),
+            onPressed: onChanged == null
+                ? null
+                : () => _pickTime(context, opening: true),
+            icon: const Icon(Icons.login_rounded, size: 18),
+            label: Text('Début : ${configuration.openingLabel}'),
+          ),
+          OutlinedButton.icon(
+            key: ValueKey('availability-$modeKey-closing-time'),
+            onPressed: onChanged == null
+                ? null
+                : () => _pickTime(context, opening: false),
+            icon: const Icon(Icons.logout_rounded, size: 18),
+            label: Text('Fin : ${configuration.closingLabel}'),
+          ),
+        ],
+      ),
+      const SizedBox(height: 14),
+      OutlinedButton.icon(
+        key: ValueKey('availability-$modeKey-period'),
+        onPressed: onChanged == null ? null : () => _pickPeriod(context),
+        icon: const Icon(Icons.date_range_outlined, size: 18),
+        label: Text(configuration.periodLabel),
+      ),
+      if (configuration.validFrom != null) ...[
+        const SizedBox(height: 4),
+        TextButton.icon(
+          onPressed: onChanged == null
+              ? null
+              : () =>
+                    onChanged?.call(configuration.copyWith(clearPeriod: true)),
+          icon: const Icon(Icons.clear_rounded, size: 16),
+          label: const Text('Retirer la période'),
+        ),
+      ],
+      const SizedBox(height: 8),
+      Text(
+        'Aperçu : ${configuration.label}',
+        style: const TextStyle(color: ProColors.muted, fontSize: 12),
+      ),
+    ],
+  );
+}
+
+class _AvailabilityConfiguration {
+  final Set<int> weekdays;
+  final TimeOfDay openingTime;
+  final TimeOfDay closingTime;
+  final DateTime? validFrom;
+  final DateTime? validUntil;
+
+  const _AvailabilityConfiguration({
+    required this.weekdays,
+    required this.openingTime,
+    required this.closingTime,
+    this.validFrom,
+    this.validUntil,
+  });
+
+  static const weekdayOptions = <_AvailabilityWeekday>[
+    _AvailabilityWeekday(1, 'Lun'),
+    _AvailabilityWeekday(2, 'Mar'),
+    _AvailabilityWeekday(3, 'Mer'),
+    _AvailabilityWeekday(4, 'Jeu'),
+    _AvailabilityWeekday(5, 'Ven'),
+    _AvailabilityWeekday(6, 'Sam'),
+    _AvailabilityWeekday(7, 'Dim'),
+  ];
+
+  factory _AvailabilityConfiguration.fromStorage(
+    Map<String, dynamic>? value,
+    String fallbackSchedule,
+  ) {
+    final storedDays = value?['weekdays'];
+    final days = storedDays is Iterable
+        ? storedDays
+              .whereType<num>()
+              .map((day) => day.toInt())
+              .where((day) => day >= 1 && day <= 7)
+              .toSet()
+        : _weekdaysFromSchedule(fallbackSchedule);
+    return _AvailabilityConfiguration(
+      weekdays: days.isEmpty ? {1, 2, 3, 4, 5} : days,
+      openingTime: _timeFromText(
+        value?['openingTime']?.toString(),
+        fallbackSchedule,
+        fallbackIndex: 0,
+      ),
+      closingTime: _timeFromText(
+        value?['closingTime']?.toString(),
+        fallbackSchedule,
+        fallbackIndex: 1,
+      ),
+      validFrom: DateTime.tryParse(value?['validFrom']?.toString() ?? ''),
+      validUntil: DateTime.tryParse(value?['validUntil']?.toString() ?? ''),
+    );
+  }
+
+  _AvailabilityConfiguration copyWith({
+    Set<int>? weekdays,
+    TimeOfDay? openingTime,
+    TimeOfDay? closingTime,
+    DateTime? validFrom,
+    DateTime? validUntil,
+    bool clearPeriod = false,
+  }) => _AvailabilityConfiguration(
+    weekdays: weekdays ?? this.weekdays,
+    openingTime: openingTime ?? this.openingTime,
+    closingTime: closingTime ?? this.closingTime,
+    validFrom: clearPeriod ? null : validFrom ?? this.validFrom,
+    validUntil: clearPeriod ? null : validUntil ?? this.validUntil,
+  );
+
+  int get openingMinutes => openingTime.hour * 60 + openingTime.minute;
+  int get closingMinutes => closingTime.hour * 60 + closingTime.minute;
+  String get openingLabel => _formatTime(openingTime);
+  String get closingLabel => _formatTime(closingTime);
+  String get label => '${_dayLabel(weekdays)}, $openingLabel–$closingLabel';
+  String get periodLabel => validFrom == null
+      ? 'Définir une période de validité (facultatif)'
+      : 'Du ${_formatDate(validFrom!)} au ${_formatDate(validUntil!)}';
+
+  Map<String, dynamic> toStorageMap() => {
+    'weekdays': weekdays.toList()..sort(),
+    'openingTime': _storageTime(openingTime),
+    'closingTime': _storageTime(closingTime),
+    'validFrom': validFrom == null ? '' : _storageDate(validFrom!),
+    'validUntil': validUntil == null ? '' : _storageDate(validUntil!),
+  };
+
+  static Set<int> _weekdaysFromSchedule(String schedule) {
+    final normalized = schedule.toLowerCase();
+    final range = RegExp(
+      r'(lun|mar|mer|jeu|ven|sam|dim)\s*[–-]\s*(lun|mar|mer|jeu|ven|sam|dim)',
+    ).firstMatch(normalized);
+    int? dayFor(String? value) => switch (value) {
+      'lun' => 1,
+      'mar' => 2,
+      'mer' => 3,
+      'jeu' => 4,
+      'ven' => 5,
+      'sam' => 6,
+      'dim' => 7,
+      _ => null,
+    };
+    if (range != null) {
+      final start = dayFor(range.group(1))!;
+      final end = dayFor(range.group(2))!;
+      return {for (var day = start; day <= end; day++) day};
+    }
+    return {
+      for (final day in weekdayOptions)
+        if (normalized.contains(day.shortLabel.toLowerCase())) day.value,
+    };
+  }
+
+  static TimeOfDay _timeFromText(
+    String? stored,
+    String fallback, {
+    required int fallbackIndex,
+  }) {
+    final storedMatch = RegExp(r'^(\d{1,2}):(\d{2})$').firstMatch(stored ?? '');
+    if (storedMatch != null) {
+      return TimeOfDay(
+        hour: int.parse(storedMatch.group(1)!),
+        minute: int.parse(storedMatch.group(2)!),
+      );
+    }
+    final matches = RegExp(
+      r'(\d{1,2})\s*h(?:\s*(\d{1,2}))?',
+    ).allMatches(fallback).toList();
+    if (matches.length > fallbackIndex) {
+      final match = matches[fallbackIndex];
+      return TimeOfDay(
+        hour: int.parse(match.group(1)!),
+        minute: int.tryParse(match.group(2) ?? '') ?? 0,
+      );
+    }
+    return TimeOfDay(hour: fallbackIndex == 0 ? 8 : 16, minute: 0);
+  }
+
+  static String _dayLabel(Set<int> days) {
+    final ordered = days.toList()..sort();
+    if (ordered.length > 1 &&
+        ordered.every((day) => day >= ordered.first && day <= ordered.last) &&
+        ordered.length == ordered.last - ordered.first + 1) {
+      return '${weekdayOptions[ordered.first - 1].shortLabel}–${weekdayOptions[ordered.last - 1].shortLabel}';
+    }
+    return ordered.map((day) => weekdayOptions[day - 1].shortLabel).join(', ');
+  }
+
+  static String _formatTime(TimeOfDay time) => time.minute == 0
+      ? '${time.hour} h'
+      : '${time.hour} h ${time.minute.toString().padLeft(2, '0')}';
+  static String _storageTime(TimeOfDay time) =>
+      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  static String _storageDate(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  static String _formatDate(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+}
+
+class _AvailabilityWeekday {
+  final int value;
+  final String shortLabel;
+
+  const _AvailabilityWeekday(this.value, this.shortLabel);
 }
 
 class ProField extends StatelessWidget {

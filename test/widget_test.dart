@@ -167,13 +167,39 @@ void main() {
     expect(find.text('Personnel de santé'), findsOneWidget);
     expect(find.text('Institution de santé'), findsOneWidget);
     expect(find.text('Identité professionnelle'), findsOneWidget);
+    expect(find.text('Spécialités suggérées'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('type-institution')));
+    await tester.tap(find.byKey(const ValueKey('suggestion-Pédiatre')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const ValueKey('category-field')))
+          .controller!
+          .text,
+      'Pédiatre',
+    );
+
+    final vaccination = find.byKey(const ValueKey('suggestion-Vaccination'));
+    await tester.ensureVisible(vaccination);
+    await tester.tap(vaccination);
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const ValueKey('services-field')))
+          .controller!
+          .text,
+      'Vaccination',
+    );
+
+    final institutionType = find.byKey(const ValueKey('type-institution'));
+    await tester.ensureVisible(institutionType);
+    await tester.tap(institutionType);
     await tester.pump();
 
     expect(find.text('Identité de l’institution'), findsOneWidget);
     expect(find.text('Responsable du compte *'), findsOneWidget);
     expect(find.text('Numéro d’enregistrement *'), findsOneWidget);
+    expect(find.text('Types d’institution suggérés'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -203,6 +229,43 @@ void main() {
     );
     expect(visibilitySwitch.onChanged, isNull);
     expect(find.text('Disponible après validation du profil.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('configure les disponibilités avec des sélecteurs visuels', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      app(
+        ProRegistrationScreen(
+          uid: 'provider-1',
+          accountEmail: 'pro@example.ht',
+          accountName: 'Marie Jean',
+          repository: FakeProfessionalRepository(),
+        ),
+      ),
+    );
+
+    final availabilitySwitch = find.byKey(
+      const ValueKey('at-provider-enabled-switch'),
+    );
+    await tester.ensureVisible(availabilitySwitch);
+    await tester.tap(availabilitySwitch);
+    await tester.pump();
+
+    final monday = find.byKey(const ValueKey('availability-inPerson-day-1'));
+    final period = find.byKey(const ValueKey('availability-inPerson-period'));
+    expect(monday, findsOneWidget);
+    expect(period, findsOneWidget);
+    expect(tester.widget<FilterChip>(monday).selected, isTrue);
+
+    await tester.ensureVisible(monday);
+    await tester.tap(monday);
+    await tester.pump();
+    expect(tester.widget<FilterChip>(monday).selected, isFalse);
     expect(tester.takeException(), isNull);
   });
 

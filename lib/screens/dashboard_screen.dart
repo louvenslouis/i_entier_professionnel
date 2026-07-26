@@ -732,6 +732,12 @@ class _ProfileSummary extends StatelessWidget {
                 ? 'Prix par défaut non renseigné'
                 : '${profile.defaultPrice} HTG',
           ),
+        if (profile.accountType == ProviderAccountType.institution &&
+            profile.institutionPricesPublished)
+          _SummaryLine(
+            icon: Icons.payments_outlined,
+            label: 'Tarifs des services et chambres publiés',
+          ),
       ],
     ),
   );
@@ -896,6 +902,22 @@ class _ProfilePreview extends StatelessWidget {
                               ? 'À confirmer'
                               : '${profile.defaultPrice} HTG',
                         ),
+                      if (profile.accountType ==
+                              ProviderAccountType.institution &&
+                          profile.institutionPricesPublished) ...[
+                        if (profile.servicePrices.isNotEmpty)
+                          _PreviewInfo(
+                            icon: Icons.medical_information_outlined,
+                            label: 'Tarifs des services',
+                            value: profile.servicePrices,
+                          ),
+                        if (profile.roomPrices.isNotEmpty)
+                          _PreviewInfo(
+                            icon: Icons.hotel_outlined,
+                            label: 'Tarifs des chambres',
+                            value: profile.roomPrices,
+                          ),
+                      ],
                       _PreviewInfo(
                         icon: Icons.location_on_outlined,
                         label: 'Adresse',

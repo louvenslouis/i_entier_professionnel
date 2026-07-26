@@ -64,6 +64,10 @@ class ProviderProfile {
   final String homeVisitSchedule;
   final String videoSchedule;
   final String defaultPrice;
+  final bool institutionPricesPublished;
+  final String servicePrices;
+  final String roomPrices;
+  final Map<String, Map<String, dynamic>> availabilityConfigurations;
   final bool atProviderEnabled;
   final bool homeVisitEnabled;
   final bool videoEnabled;
@@ -95,6 +99,10 @@ class ProviderProfile {
     this.homeVisitSchedule = '',
     this.videoSchedule = '',
     this.defaultPrice = '',
+    this.institutionPricesPublished = false,
+    this.servicePrices = '',
+    this.roomPrices = '',
+    this.availabilityConfigurations = const <String, Map<String, dynamic>>{},
     this.atProviderEnabled = false,
     this.homeVisitEnabled = false,
     this.videoEnabled = false,
@@ -148,6 +156,10 @@ class ProviderProfile {
     String? homeVisitSchedule,
     String? videoSchedule,
     String? defaultPrice,
+    bool? institutionPricesPublished,
+    String? servicePrices,
+    String? roomPrices,
+    Map<String, Map<String, dynamic>>? availabilityConfigurations,
     bool? atProviderEnabled,
     bool? homeVisitEnabled,
     bool? videoEnabled,
@@ -178,6 +190,12 @@ class ProviderProfile {
     homeVisitSchedule: homeVisitSchedule ?? this.homeVisitSchedule,
     videoSchedule: videoSchedule ?? this.videoSchedule,
     defaultPrice: defaultPrice ?? this.defaultPrice,
+    institutionPricesPublished:
+        institutionPricesPublished ?? this.institutionPricesPublished,
+    servicePrices: servicePrices ?? this.servicePrices,
+    roomPrices: roomPrices ?? this.roomPrices,
+    availabilityConfigurations:
+        availabilityConfigurations ?? this.availabilityConfigurations,
     atProviderEnabled: atProviderEnabled ?? this.atProviderEnabled,
     homeVisitEnabled: homeVisitEnabled ?? this.homeVisitEnabled,
     videoEnabled: videoEnabled ?? this.videoEnabled,
@@ -193,6 +211,16 @@ class ProviderProfile {
   ) {
     final data = document.data() ?? const <String, dynamic>{};
     String text(String key) => data[key]?.toString().trim() ?? '';
+    Map<String, Map<String, dynamic>> availabilityConfigurations() {
+      final value = data['availabilityConfigurations'];
+      if (value is! Map) return const <String, Map<String, dynamic>>{};
+      return {
+        for (final entry in value.entries)
+          if (entry.key is String && entry.value is Map)
+            entry.key as String: Map<String, dynamic>.from(entry.value as Map),
+      };
+    }
+
     return ProviderProfile(
       ownerUid: text('ownerUid').isEmpty ? document.id : text('ownerUid'),
       accountType: ProviderAccountTypeText.fromStorage(text('accountType')),
@@ -215,6 +243,10 @@ class ProviderProfile {
       homeVisitSchedule: text('homeVisitSchedule'),
       videoSchedule: text('videoSchedule'),
       defaultPrice: text('defaultPrice'),
+      institutionPricesPublished: data['institutionPricesPublished'] == true,
+      servicePrices: text('servicePrices'),
+      roomPrices: text('roomPrices'),
+      availabilityConfigurations: availabilityConfigurations(),
       atProviderEnabled: data['atProviderEnabled'] == true,
       homeVisitEnabled: data['homeVisitEnabled'] == true,
       videoEnabled: data['videoEnabled'] == true,
@@ -262,6 +294,16 @@ class ProviderProfile {
     'homeVisitSchedule': homeVisitSchedule.trim(),
     'videoSchedule': videoSchedule.trim(),
     'defaultPrice': defaultPrice.trim(),
+    'institutionPricesPublished':
+        accountType == ProviderAccountType.institution &&
+        institutionPricesPublished,
+    'servicePrices': accountType == ProviderAccountType.institution
+        ? servicePrices.trim()
+        : '',
+    'roomPrices': accountType == ProviderAccountType.institution
+        ? roomPrices.trim()
+        : '',
+    'availabilityConfigurations': availabilityConfigurations,
     'atProviderEnabled': atProviderEnabled,
     'homeVisitEnabled': homeVisitEnabled,
     'videoEnabled': videoEnabled,
@@ -295,6 +337,7 @@ class ProviderProfile {
             'homeVisit': homeVisitEnabled,
             'video': videoEnabled,
           },
+          'disponibilitesParMode': availabilityConfigurations,
           'prixParDefaut': defaultPrice.trim(),
           'adresse': address.trim(),
           'telephone': phone.trim(),
@@ -315,6 +358,11 @@ class ProviderProfile {
           'telephone': phone.trim(),
           'email': email.trim(),
           'disponible': available,
+          'tarifsPublies': institutionPricesPublished,
+          'tarifsServices': institutionPricesPublished
+              ? servicePrices.trim()
+              : '',
+          'tarifsChambres': institutionPricesPublished ? roomPrices.trim() : '',
           'isPublished': true,
           'verificationStatus': 'approved',
           'updatedAt': FieldValue.serverTimestamp(),
