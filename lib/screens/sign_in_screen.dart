@@ -1,8 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../supabase_config.dart';
 import '../theme/pro_theme.dart';
 
 class ProSignInScreen extends StatefulWidget {
@@ -22,27 +22,13 @@ class _ProSignInScreenState extends State<ProSignInScreen> {
       _error = null;
     });
     try {
-      if (kIsWeb) {
-        final provider = GoogleAuthProvider()
-          ..setCustomParameters({'prompt': 'select_account'});
-        await FirebaseAuth.instance.signInWithPopup(provider);
-      } else {
-        final googleUser = await GoogleSignIn().signIn();
-        if (googleUser == null) return;
-        final googleAuth = await googleUser.authentication;
-        await FirebaseAuth.instance.signInWithCredential(
-          GoogleAuthProvider.credential(
-            accessToken: googleAuth.accessToken,
-            idToken: googleAuth.idToken,
-          ),
-        );
-      }
-    } on FirebaseAuthException catch (error) {
-      _error = switch (error.code) {
-        'popup-closed-by-user' => 'La fenêtre de connexion a été fermée.',
-        'network-request-failed' => 'Vérifiez votre connexion Internet.',
-        _ => 'Connexion impossible pour le moment. Réessayez.',
-      };
+      await SupabaseConfig.client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? null : SupabaseConfig.oauthRedirectUrl,
+        queryParams: const {'prompt': 'select_account'},
+      );
+    } on AuthException catch (error) {
+      _error = error.message;
     } catch (_) {
       _error = 'La connexion Google n’a pas abouti. Réessayez.';
     } finally {

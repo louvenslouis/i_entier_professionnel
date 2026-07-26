@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum ProfessionalAppointmentStatus { pending, confirmed, cancelled }
 
 enum ProfessionalAppointmentMode { atProvider, homeVisit, video }
@@ -85,41 +83,38 @@ class ProfessionalAppointment {
     this.respondedAt,
   });
 
-  factory ProfessionalAppointment.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> document,
-  ) {
-    final data = document.data() ?? const <String, dynamic>{};
+  factory ProfessionalAppointment.fromRow(Map<String, dynamic> data) {
     String text(String key) => data[key]?.toString().trim() ?? '';
     DateTime date(String key, [DateTime? fallback]) {
       final value = data[key];
-      if (value is Timestamp) return value.toDate();
       if (value is DateTime) return value;
+      if (value is String) {
+        return DateTime.tryParse(value)?.toLocal() ??
+            fallback ??
+            DateTime.now();
+      }
       return fallback ?? DateTime.now();
     }
 
-    final createdAt = date('createdAt');
+    final createdAt = date('created_at');
     return ProfessionalAppointment(
-      id: document.id,
-      patientId: text('patientId'),
-      patientName: text('patientName'),
-      providerId: text('providerId'),
-      providerType: text('providerType'),
-      providerName: text('providerName'),
-      service: text('service'),
-      mode: ProfessionalAppointmentModeText.fromStorage(
-        data['appointmentMode'],
-      ),
+      id: text('appointment_id'),
+      patientId: text('patient_id'),
+      patientName: text('patient_name_snapshot'),
+      providerId: text('provider_id'),
+      providerType: text('provider_type_snapshot'),
+      providerName: text('provider_name_snapshot'),
+      service: text('service_name_snapshot'),
+      mode: ProfessionalAppointmentModeText.fromStorage(data['mode']),
       location: text('location'),
-      scheduledAt: date('scheduledAt'),
-      scheduleLabel: text('scheduleLabel'),
+      scheduledAt: date('scheduled_at'),
+      scheduleLabel: text('schedule_label'),
       status: ProfessionalAppointmentStatusText.fromStorage(data['status']),
-      patientNote: text('patientNote'),
-      responseNote: text('responseNote'),
+      patientNote: text('patient_note'),
+      responseNote: text('response_note'),
       createdAt: createdAt,
-      updatedAt: date('updatedAt', createdAt),
-      respondedAt: data['respondedAt'] is Timestamp
-          ? (data['respondedAt'] as Timestamp).toDate()
-          : null,
+      updatedAt: date('updated_at', createdAt),
+      respondedAt: data['responded_at'] == null ? null : date('responded_at'),
     );
   }
 }

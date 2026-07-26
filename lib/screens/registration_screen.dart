@@ -1,8 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../data/professional_repository.dart';
 import '../models/provider_profile.dart';
+import '../supabase_config.dart';
 import '../theme/pro_theme.dart';
 
 class ProRegistrationScreen extends StatefulWidget {
@@ -319,7 +319,7 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
       actions: [
         if (!widget.isEditing)
           TextButton.icon(
-            onPressed: () => FirebaseAuth.instance.signOut(),
+            onPressed: () => SupabaseConfig.client.auth.signOut(),
             icon: const Icon(Icons.logout_rounded, size: 18),
             label: const Text('Déconnexion'),
           ),

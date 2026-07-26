@@ -1,11 +1,12 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'data/professional_repository.dart';
 import 'models/provider_profile.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/registration_screen.dart';
 import 'screens/sign_in_screen.dart';
+import 'supabase_config.dart';
 import 'theme/pro_theme.dart';
 
 class IEntierProfessionnelApp extends StatelessWidget {
@@ -19,7 +20,7 @@ class IEntierProfessionnelApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     theme: buildProTheme(),
     home: ProfessionalAuthGate(
-      repository: repository ?? FirestoreProfessionalRepository(),
+      repository: repository ?? SupabaseProfessionalRepository(),
     ),
   );
 }
@@ -31,7 +32,9 @@ class ProfessionalAuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => StreamBuilder<User?>(
-    stream: FirebaseAuth.instance.authStateChanges(),
+    stream: SupabaseConfig.client.auth.onAuthStateChange.map(
+      (state) => state.session?.user,
+    ),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         return const ProLoadingScreen();
@@ -64,7 +67,7 @@ class ProviderProfileGate extends StatelessWidget {
         return const ProErrorScreen(
           title: 'Impossible d’ouvrir votre espace',
           message:
-              'Vérifiez la connexion et les règles Firestore de providerProfiles.',
+              'Vérifiez la connexion et les politiques Supabase du profil.',
         );
       }
       final profile = snapshot.data;
@@ -122,7 +125,7 @@ class ProErrorScreen extends StatelessWidget {
                 Text(message, textAlign: TextAlign.center),
                 const SizedBox(height: 18),
                 TextButton.icon(
-                  onPressed: FirebaseAuth.instance.signOut,
+                  onPressed: SupabaseConfig.client.auth.signOut,
                   icon: const Icon(Icons.logout_rounded),
                   label: const Text('Changer de compte'),
                 ),

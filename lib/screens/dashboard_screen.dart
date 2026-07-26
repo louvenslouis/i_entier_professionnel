@@ -1,9 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../data/appointment_repository.dart';
 import '../data/professional_repository.dart';
 import '../models/provider_profile.dart';
+import '../supabase_config.dart';
 import '../theme/pro_theme.dart';
 import 'appointments_screen.dart';
 import 'institution_link_screen.dart';
@@ -32,7 +32,7 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
   bool _updating = false;
   late final ProfessionalAppointmentRepository _appointmentRepository =
       widget.appointmentRepository ??
-      FirestoreProfessionalAppointmentRepository();
+      SupabaseProfessionalAppointmentRepository();
 
   Future<void> _setVisibility(bool value) async {
     setState(() => _updating = true);
@@ -75,7 +75,7 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
   );
 
   Future<void> _signOut() =>
-      widget.onSignOut?.call() ?? FirebaseAuth.instance.signOut();
+      widget.onSignOut?.call() ?? SupabaseConfig.client.auth.signOut();
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(

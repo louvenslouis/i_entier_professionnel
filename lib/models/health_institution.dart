@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class HealthInstitution {
   final String id;
   final String name;
@@ -15,22 +13,15 @@ class HealthInstitution {
     required this.phone,
   });
 
-  factory HealthInstitution.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> document,
-  ) {
-    final data = document.data() ?? const <String, dynamic>{};
+  factory HealthInstitution.fromRow(Map<String, dynamic> data) {
     String text(String key) => data[key]?.toString().trim() ?? '';
 
     return HealthInstitution(
-      id: document.id,
-      name: text('nom').isNotEmpty
-          ? text('nom')
-          : (text('displayName').isNotEmpty
-                ? text('displayName')
-                : text('name')),
-      type: text('type').isNotEmpty ? text('type') : text('category'),
-      address: text('adresse').isNotEmpty ? text('adresse') : text('address'),
-      phone: text('telephone').isNotEmpty ? text('telephone') : text('phone'),
+      id: text('provider_id'),
+      name: text('display_name'),
+      type: text('category'),
+      address: text('address'),
+      phone: text('phone'),
     );
   }
 

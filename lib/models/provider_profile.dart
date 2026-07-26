@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum ProviderAccountType { professional, institution }
 
 extension ProviderAccountTypeText on ProviderAccountType {
@@ -206,13 +204,17 @@ class ProviderProfile {
     termsAccepted: termsAccepted ?? this.termsAccepted,
   );
 
-  factory ProviderProfile.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> document,
-  ) {
-    final data = document.data() ?? const <String, dynamic>{};
+  factory ProviderProfile.fromRow(Map<String, dynamic> data) {
     String text(String key) => data[key]?.toString().trim() ?? '';
+
+    final legacy = data['legacy_availability_config'] is Map
+        ? Map<String, dynamic>.from(data['legacy_availability_config'] as Map)
+        : const <String, dynamic>{};
+
     Map<String, Map<String, dynamic>> availabilityConfigurations() {
-      final value = data['availabilityConfigurations'];
+      final value =
+          legacy['availabilityConfigurations'] ??
+          legacy['availability_configurations'];
       if (value is! Map) return const <String, Map<String, dynamic>>{};
       return {
         for (final entry in value.entries)
@@ -222,64 +224,66 @@ class ProviderProfile {
     }
 
     return ProviderProfile(
-      ownerUid: text('ownerUid').isEmpty ? document.id : text('ownerUid'),
-      accountType: ProviderAccountTypeText.fromStorage(text('accountType')),
-      displayName: text('displayName'),
+      ownerUid: text('provider_id'),
+      accountType: ProviderAccountTypeText.fromStorage(text('account_type')),
+      displayName: text('display_name'),
       category: text('category'),
-      registrationNumber: text('registrationNumber'),
-      contactPerson: text('contactPerson'),
+      registrationNumber: text('registration_number'),
+      contactPerson: text('contact_person'),
       workplace: text('workplace'),
-      linkedInstitutionId: text('linkedInstitutionId'),
-      linkedInstitutionName: text('linkedInstitutionName'),
+      linkedInstitutionId: text('linked_institution_id'),
+      linkedInstitutionName: text('linked_institution_name_snapshot'),
       phone: text('phone'),
       email: text('email'),
       address: text('address'),
       description: text('description'),
       experience: text('experience'),
       qualifications: text('qualifications'),
-      services: text('services'),
-      schedule: text('schedule'),
-      atProviderSchedule: text('atProviderSchedule'),
-      homeVisitSchedule: text('homeVisitSchedule'),
-      videoSchedule: text('videoSchedule'),
-      defaultPrice: text('defaultPrice'),
-      institutionPricesPublished: data['institutionPricesPublished'] == true,
-      servicePrices: text('servicePrices'),
-      roomPrices: text('roomPrices'),
+      services: text('services_summary'),
+      schedule: text('schedule_summary'),
+      atProviderSchedule: legacy['atProviderSchedule']?.toString() ?? '',
+      homeVisitSchedule: legacy['homeVisitSchedule']?.toString() ?? '',
+      videoSchedule: legacy['videoSchedule']?.toString() ?? '',
+      defaultPrice: legacy['defaultPrice']?.toString() ?? '',
+      institutionPricesPublished: data['institution_prices_published'] == true,
+      servicePrices: text('service_prices_summary'),
+      roomPrices: text('room_prices_summary'),
       availabilityConfigurations: availabilityConfigurations(),
-      atProviderEnabled: data['atProviderEnabled'] == true,
-      homeVisitEnabled: data['homeVisitEnabled'] == true,
-      videoEnabled: data['videoEnabled'] == true,
+      atProviderEnabled: legacy['atProviderEnabled'] == true,
+      homeVisitEnabled: legacy['homeVisitEnabled'] == true,
+      videoEnabled: legacy['videoEnabled'] == true,
       available: data['available'] != false,
-      isVisible: data['isVisible'] == true,
+      isVisible: data['is_visible'] == true,
       verificationStatus: ProviderVerificationStatusText.fromStorage(
-        text('verificationStatus'),
+        text('verification_status'),
       ),
-      rejectionReason: text('rejectionReason'),
-      termsAccepted: data['termsAccepted'] == true,
+      rejectionReason: text('rejection_reason'),
+      termsAccepted: data['terms_accepted'] == true,
     );
   }
 
   Map<String, dynamic> toCreateMap() => {
     ...toEditableMap(),
-    'ownerUid': ownerUid,
-    'accountType': accountType.storageValue,
-    'verificationStatus': ProviderVerificationStatus.pending.storageValue,
-    'rejectionReason': '',
-    'isVisible': false,
-    'createdAt': FieldValue.serverTimestamp(),
+    'provider_id': ownerUid,
+    'account_type': accountType.storageValue,
+    'verification_status': ProviderVerificationStatus.pending.storageValue,
+    'rejection_reason': '',
+    'is_visible': false,
   };
 
   Map<String, dynamic> toEditableMap() => {
-    'displayName': displayName.trim(),
+    'display_name': displayName.trim(),
     'category': category.trim(),
-    'registrationNumber': registrationNumber.trim(),
-    'contactPerson': contactPerson.trim(),
+    'registration_number': registrationNumber.trim(),
+    'contact_person': contactPerson.trim(),
     'workplace': workplace.trim(),
-    'linkedInstitutionId': accountType == ProviderAccountType.professional
+    'linked_institution_id':
+        accountType == ProviderAccountType.professional &&
+            linkedInstitutionId.trim().isNotEmpty
         ? linkedInstitutionId.trim()
-        : '',
-    'linkedInstitutionName': accountType == ProviderAccountType.professional
+        : null,
+    'linked_institution_name_snapshot':
+        accountType == ProviderAccountType.professional
         ? linkedInstitutionName.trim()
         : '',
     'phone': phone.trim(),
@@ -288,29 +292,30 @@ class ProviderProfile {
     'description': description.trim(),
     'experience': experience.trim(),
     'qualifications': qualifications.trim(),
-    'services': services.trim(),
-    'schedule': schedule.trim(),
-    'atProviderSchedule': atProviderSchedule.trim(),
-    'homeVisitSchedule': homeVisitSchedule.trim(),
-    'videoSchedule': videoSchedule.trim(),
-    'defaultPrice': defaultPrice.trim(),
-    'institutionPricesPublished':
+    'services_summary': services.trim(),
+    'schedule_summary': schedule.trim(),
+    'institution_prices_published':
         accountType == ProviderAccountType.institution &&
         institutionPricesPublished,
-    'servicePrices': accountType == ProviderAccountType.institution
+    'service_prices_summary': accountType == ProviderAccountType.institution
         ? servicePrices.trim()
         : '',
-    'roomPrices': accountType == ProviderAccountType.institution
+    'room_prices_summary': accountType == ProviderAccountType.institution
         ? roomPrices.trim()
         : '',
-    'availabilityConfigurations': availabilityConfigurations,
-    'atProviderEnabled': atProviderEnabled,
-    'homeVisitEnabled': homeVisitEnabled,
-    'videoEnabled': videoEnabled,
+    'legacy_availability_config': {
+      'availabilityConfigurations': availabilityConfigurations,
+      'atProviderSchedule': atProviderSchedule.trim(),
+      'homeVisitSchedule': homeVisitSchedule.trim(),
+      'videoSchedule': videoSchedule.trim(),
+      'defaultPrice': defaultPrice.trim(),
+      'atProviderEnabled': atProviderEnabled,
+      'homeVisitEnabled': homeVisitEnabled,
+      'videoEnabled': videoEnabled,
+    },
     'available': available,
-    'isVisible': isApproved && isVisible,
-    'termsAccepted': termsAccepted,
-    'updatedAt': FieldValue.serverTimestamp(),
+    'is_visible': isApproved && isVisible,
+    'terms_accepted': termsAccepted,
   };
 
   Map<String, dynamic> toDirectoryMap() =>
@@ -345,7 +350,7 @@ class ProviderProfile {
           'disponible': available,
           'isPublished': true,
           'verificationStatus': 'approved',
-          'updatedAt': FieldValue.serverTimestamp(),
+          'updatedAt': DateTime.now().toUtc().toIso8601String(),
         }
       : {
           'ownerUid': ownerUid,
@@ -365,6 +370,6 @@ class ProviderProfile {
           'tarifsChambres': institutionPricesPublished ? roomPrices.trim() : '',
           'isPublished': true,
           'verificationStatus': 'approved',
-          'updatedAt': FieldValue.serverTimestamp(),
+          'updatedAt': DateTime.now().toUtc().toIso8601String(),
         };
 }
