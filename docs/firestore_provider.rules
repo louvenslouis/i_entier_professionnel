@@ -6,16 +6,22 @@ function validProviderProfile(data) {
   return data.keys().hasOnly([
       'ownerUid', 'accountType', 'displayName', 'category',
       'registrationNumber', 'contactPerson', 'workplace',
-      'linkedInstitutionId', 'linkedInstitutionName', 'phone', 'email',
-      'address', 'description', 'experience', 'qualifications', 'services',
-      'schedule', 'available', 'isVisible', 'verificationStatus',
+          'linkedInstitutionId', 'linkedInstitutionName', 'phone', 'email',
+          'address', 'description', 'experience', 'qualifications', 'services',
+          'schedule', 'atProviderSchedule', 'homeVisitSchedule', 'videoSchedule',
+          'defaultPrice', 'institutionPricesPublished', 'servicePrices',
+          'roomPrices', 'availabilityConfigurations', 'atProviderEnabled',
+          'homeVisitEnabled', 'videoEnabled', 'available', 'isVisible', 'verificationStatus',
       'rejectionReason', 'termsAccepted', 'createdAt', 'updatedAt'
     ])
     && data.keys().hasAll([
       'ownerUid', 'accountType', 'displayName', 'category',
       'registrationNumber', 'contactPerson', 'workplace', 'phone', 'email',
-      'address', 'description', 'experience', 'qualifications', 'services',
-      'schedule', 'available', 'isVisible', 'verificationStatus',
+          'address', 'description', 'experience', 'qualifications', 'services',
+          'schedule', 'atProviderSchedule', 'homeVisitSchedule', 'videoSchedule',
+          'defaultPrice', 'institutionPricesPublished', 'servicePrices',
+          'roomPrices', 'availabilityConfigurations', 'atProviderEnabled',
+          'homeVisitEnabled', 'videoEnabled', 'available', 'isVisible', 'verificationStatus',
       'rejectionReason', 'termsAccepted', 'createdAt', 'updatedAt'
     ])
     && data.accountType in ['professional', 'institution']
@@ -77,9 +83,26 @@ function validProviderProfile(data) {
     && data.services is string
     && data.services.size() > 1
     && data.services.size() <= 1200
-    && data.schedule is string
-    && data.schedule.size() > 1
-    && data.schedule.size() <= 500
+        && data.schedule is string
+        && data.schedule.size() > 1
+        && data.schedule.size() <= 500
+        && data.atProviderSchedule is string
+        && data.atProviderSchedule.size() <= 500
+        && data.homeVisitSchedule is string
+        && data.homeVisitSchedule.size() <= 500
+        && data.videoSchedule is string
+        && data.videoSchedule.size() <= 500
+        && data.defaultPrice is string
+        && data.defaultPrice.size() <= 80
+        && data.institutionPricesPublished is bool
+        && data.servicePrices is string
+        && data.servicePrices.size() <= 1200
+        && data.roomPrices is string
+        && data.roomPrices.size() <= 1200
+        && data.availabilityConfigurations is map
+        && data.atProviderEnabled is bool
+        && data.homeVisitEnabled is bool
+        && data.videoEnabled is bool
     && data.available is bool
     && data.isVisible is bool
     && data.verificationStatus in ['pending', 'approved', 'rejected']
@@ -205,13 +228,15 @@ function validProfessionalDirectory(data, ownerId) {
 
 function validInstitutionDirectory(data, ownerId) {
   return data.keys().hasOnly([
-      'ownerUid', 'nom', 'type', 'description', 'services', 'horaires',
-      'adresse', 'telephone', 'email', 'disponible', 'isPublished',
+          'ownerUid', 'nom', 'type', 'description', 'services', 'horaires',
+          'adresse', 'telephone', 'email', 'disponible', 'tarifsPublies',
+          'tarifsServices', 'tarifsChambres', 'isPublished',
       'verificationStatus', 'createdAt', 'updatedAt'
     ])
     && data.keys().hasAll([
-      'ownerUid', 'nom', 'type', 'description', 'services', 'horaires',
-      'adresse', 'telephone', 'email', 'disponible', 'isPublished',
+          'ownerUid', 'nom', 'type', 'description', 'services', 'horaires',
+          'adresse', 'telephone', 'email', 'disponible', 'tarifsPublies',
+          'tarifsServices', 'tarifsChambres', 'isPublished',
       'verificationStatus', 'createdAt', 'updatedAt'
     ])
     && data.ownerUid == ownerId
@@ -231,10 +256,15 @@ function validInstitutionDirectory(data, ownerId) {
     && data.adresse.size() <= 300
     && data.telephone is string
     && data.telephone.size() <= 40
-    && data.email is string
-    && data.email.size() <= 180
-    && data.disponible is bool
-    && data.isPublished == true
+        && data.email is string
+        && data.email.size() <= 180
+        && data.disponible is bool
+        && data.tarifsPublies is bool
+        && data.tarifsServices is string
+        && data.tarifsServices.size() <= 1200
+        && data.tarifsChambres is string
+        && data.tarifsChambres.size() <= 1200
+        && data.isPublished == true
     && data.verificationStatus == 'approved'
     && data.createdAt is timestamp
     && data.updatedAt is timestamp;
