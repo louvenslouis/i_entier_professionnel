@@ -1044,7 +1044,7 @@ class _InstitutionPriceConfiguration extends StatelessWidget {
         contentPadding: EdgeInsets.zero,
         value: published,
         onChanged: onPublishedChanged,
-        activeColor: ProColors.primary,
+        activeThumbColor: ProColors.primary,
         title: const Text(
           'Publier les tarifs',
           style: TextStyle(color: ProColors.ink, fontWeight: FontWeight.w800),
