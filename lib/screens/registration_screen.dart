@@ -33,6 +33,9 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
   late final Map<String, TextEditingController> _controllers;
   bool _termsAccepted = false;
   bool _saving = false;
+  bool _atProviderEnabled = false;
+  bool _homeVisitEnabled = false;
+  bool _videoEnabled = false;
   String? _error;
 
   ProviderProfile? get _initial => widget.initialProfile;
@@ -42,6 +45,9 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
     super.initState();
     _accountType = _initial?.accountType ?? ProviderAccountType.professional;
     _termsAccepted = _initial?.termsAccepted ?? false;
+    _atProviderEnabled = _initial?.atProviderEnabled ?? false;
+    _homeVisitEnabled = _initial?.homeVisitEnabled ?? false;
+    _videoEnabled = _initial?.videoEnabled ?? false;
     _controllers = {
       'displayName': TextEditingController(
         text: _initial?.displayName ?? widget.accountName,
@@ -66,6 +72,18 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
       ),
       'services': TextEditingController(text: _initial?.services ?? ''),
       'schedule': TextEditingController(text: _initial?.schedule ?? ''),
+      'atProviderSchedule': TextEditingController(
+        text: _initial?.atProviderSchedule.isNotEmpty == true
+            ? _initial!.atProviderSchedule
+            : _initial?.schedule ?? '',
+      ),
+      'homeVisitSchedule': TextEditingController(
+        text: _initial?.homeVisitSchedule ?? '',
+      ),
+      'videoSchedule': TextEditingController(
+        text: _initial?.videoSchedule ?? '',
+      ),
+      'defaultPrice': TextEditingController(text: _initial?.defaultPrice ?? ''),
     };
   }
 
@@ -78,6 +96,15 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
   }
 
   String _text(String key) => _controllers[key]!.text.trim();
+
+  String _professionalScheduleSummary() => [
+    if (_atProviderEnabled && _text('atProviderSchedule').isNotEmpty)
+      'Sur place : ${_text('atProviderSchedule')}',
+    if (_homeVisitEnabled && _text('homeVisitSchedule').isNotEmpty)
+      'À domicile : ${_text('homeVisitSchedule')}',
+    if (_videoEnabled && _text('videoSchedule').isNotEmpty)
+      'Visioconférence : ${_text('videoSchedule')}',
+  ].join('\n');
 
   ProviderProfile _buildProfile() => ProviderProfile(
     ownerUid: widget.uid,
@@ -94,7 +121,27 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
     experience: _text('experience'),
     qualifications: _text('qualifications'),
     services: _text('services'),
-    schedule: _text('schedule'),
+    schedule: _accountType == ProviderAccountType.professional
+        ? _professionalScheduleSummary()
+        : _text('schedule'),
+    atProviderSchedule: _accountType == ProviderAccountType.professional
+        ? (_atProviderEnabled ? _text('atProviderSchedule') : '')
+        : '',
+    homeVisitSchedule: _accountType == ProviderAccountType.professional
+        ? (_homeVisitEnabled ? _text('homeVisitSchedule') : '')
+        : '',
+    videoSchedule: _accountType == ProviderAccountType.professional
+        ? (_videoEnabled ? _text('videoSchedule') : '')
+        : '',
+    defaultPrice: _accountType == ProviderAccountType.professional
+        ? _text('defaultPrice')
+        : '',
+    atProviderEnabled:
+        _accountType == ProviderAccountType.professional && _atProviderEnabled,
+    homeVisitEnabled:
+        _accountType == ProviderAccountType.professional && _homeVisitEnabled,
+    videoEnabled:
+        _accountType == ProviderAccountType.professional && _videoEnabled,
     available: _initial?.available ?? true,
     isVisible: _initial?.isVisible ?? false,
     verificationStatus:
@@ -145,6 +192,18 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
     if (trimmed.isEmpty) return 'Ce champ est requis.';
     if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(trimmed)) {
       return 'Saisissez une adresse e-mail valide.';
+    }
+    return null;
+  }
+
+  String? _priceValidator(String? value) {
+    final price = value?.trim() ?? '';
+    if (price.isEmpty) return null;
+    final normalized = price
+        .replaceAll(RegExp(r'\s+'), '')
+        .replaceAll(',', '.');
+    if (double.tryParse(normalized) == null) {
+      return 'Saisissez un montant valide.';
     }
     return null;
   }
@@ -345,18 +404,47 @@ class _ProRegistrationScreenState extends State<ProRegistrationScreen> {
                               maxLines: 3,
                               validator: _required,
                             ),
-                            ProField(
-                              controller: _controllers['schedule']!,
-                              label: 'Horaires *',
-                              hint: 'Lun–Ven, 8 h–16 h',
-                              maxLines: 3,
-                              validator: _required,
-                            ),
+                            if (_accountType !=
+                                ProviderAccountType.professional)
+                              ProField(
+                                controller: _controllers['schedule']!,
+                                label: 'Horaires *',
+                                hint: 'Lun–Ven, 8 h–16 h',
+                                maxLines: 3,
+                                validator: _required,
+                              ),
                           ],
                         ),
                       ],
                     ),
                   ),
+                  if (_accountType == ProviderAccountType.professional) ...[
+                    const SizedBox(height: 18),
+                    ProPanel(
+                      child: _AppointmentModeConfiguration(
+                        atProviderEnabled: _atProviderEnabled,
+                        homeVisitEnabled: _homeVisitEnabled,
+                        videoEnabled: _videoEnabled,
+                        atProviderSchedule: _controllers['atProviderSchedule']!,
+                        homeVisitSchedule: _controllers['homeVisitSchedule']!,
+                        videoSchedule: _controllers['videoSchedule']!,
+                        defaultPrice: _controllers['defaultPrice']!,
+                        onAtProviderEnabledChanged: _saving
+                            ? null
+                            : (value) =>
+                                  setState(() => _atProviderEnabled = value),
+                        onHomeVisitEnabledChanged: _saving
+                            ? null
+                            : (value) =>
+                                  setState(() => _homeVisitEnabled = value),
+                        onVideoEnabledChanged: _saving
+                            ? null
+                            : (value) => setState(() => _videoEnabled = value),
+                        priceValidator: _priceValidator,
+                        requiredValidator: _required,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 18),
                   ProPanel(
                     child: Column(
@@ -704,6 +792,180 @@ class _ResponsiveFields extends StatelessWidget {
         ],
       );
     },
+  );
+}
+
+class _AppointmentModeConfiguration extends StatelessWidget {
+  final bool atProviderEnabled;
+  final bool homeVisitEnabled;
+  final bool videoEnabled;
+  final TextEditingController atProviderSchedule;
+  final TextEditingController homeVisitSchedule;
+  final TextEditingController videoSchedule;
+  final TextEditingController defaultPrice;
+  final ValueChanged<bool>? onAtProviderEnabledChanged;
+  final ValueChanged<bool>? onHomeVisitEnabledChanged;
+  final ValueChanged<bool>? onVideoEnabledChanged;
+  final String? Function(String?)? priceValidator;
+  final String? Function(String?) requiredValidator;
+
+  const _AppointmentModeConfiguration({
+    required this.atProviderEnabled,
+    required this.homeVisitEnabled,
+    required this.videoEnabled,
+    required this.atProviderSchedule,
+    required this.homeVisitSchedule,
+    required this.videoSchedule,
+    required this.defaultPrice,
+    required this.onAtProviderEnabledChanged,
+    required this.onHomeVisitEnabledChanged,
+    required this.onVideoEnabledChanged,
+    required this.priceValidator,
+    required this.requiredValidator,
+  });
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const _FormSectionTitle(
+        title: 'Options de rendez-vous',
+        subtitle:
+            'Activez uniquement les modalités que vous proposez, puis renseignez leur disponibilité.',
+      ),
+      const SizedBox(height: 16),
+      _AppointmentModeSetting(
+        switchKey: const ValueKey('at-provider-enabled-switch'),
+        icon: Icons.local_hospital_outlined,
+        title: 'Consultation sur place',
+        subtitle: 'Le patient se déplace vers votre lieu de consultation.',
+        enabled: atProviderEnabled,
+        onChanged: onAtProviderEnabledChanged,
+        scheduleField: atProviderEnabled
+            ? ProField(
+                fieldKey: const ValueKey('at-provider-schedule-field'),
+                controller: atProviderSchedule,
+                label: 'Disponibilité sur place *',
+                hint: 'Lun–Ven, 8 h–16 h',
+                maxLines: 2,
+                validator: requiredValidator,
+              )
+            : null,
+      ),
+      const Divider(height: 28, color: ProColors.border),
+      _AppointmentModeSetting(
+        switchKey: const ValueKey('home-visit-enabled-switch'),
+        icon: Icons.home_work_outlined,
+        title: 'Visite à domicile',
+        subtitle: 'Vous vous déplacez à l’adresse indiquée par le patient.',
+        enabled: homeVisitEnabled,
+        onChanged: onHomeVisitEnabledChanged,
+        scheduleField: homeVisitEnabled
+            ? ProField(
+                fieldKey: const ValueKey('home-visit-schedule-field'),
+                controller: homeVisitSchedule,
+                label: 'Disponibilité à domicile *',
+                hint: 'Mar–Jeu, 9 h–15 h',
+                maxLines: 2,
+                validator: requiredValidator,
+              )
+            : null,
+      ),
+      const Divider(height: 28, color: ProColors.border),
+      _AppointmentModeSetting(
+        switchKey: const ValueKey('video-enabled-switch'),
+        icon: Icons.video_camera_front_outlined,
+        title: 'Visioconférence',
+        subtitle: 'La consultation se déroule à distance.',
+        enabled: videoEnabled,
+        onChanged: onVideoEnabledChanged,
+        scheduleField: videoEnabled
+            ? ProField(
+                fieldKey: const ValueKey('video-schedule-field'),
+                controller: videoSchedule,
+                label: 'Disponibilité en visioconférence *',
+                hint: 'Lun–Sam, 17 h–20 h',
+                maxLines: 2,
+                validator: requiredValidator,
+              )
+            : null,
+      ),
+      const SizedBox(height: 18),
+      ProField(
+        fieldKey: const ValueKey('default-price-field'),
+        controller: defaultPrice,
+        label: 'Prix par défaut (HTG)',
+        hint: 'Ex. 2 500',
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        validator: priceValidator,
+        fullWidth: true,
+      ),
+    ],
+  );
+}
+
+class _AppointmentModeSetting extends StatelessWidget {
+  final Key switchKey;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool enabled;
+  final ValueChanged<bool>? onChanged;
+  final Widget? scheduleField;
+
+  const _AppointmentModeSetting({
+    required this.switchKey,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.enabled,
+    required this.onChanged,
+    this.scheduleField,
+  });
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: ProColors.primarySoft,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: ProColors.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: ProColors.ink,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: ProColors.muted, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Switch(key: switchKey, value: enabled, onChanged: onChanged),
+        ],
+      ),
+      if (scheduleField != null) ...[
+        const SizedBox(height: 14),
+        scheduleField!,
+      ],
+    ],
   );
 }
 

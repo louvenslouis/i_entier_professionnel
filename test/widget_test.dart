@@ -355,4 +355,33 @@ void main() {
 
     expect(institution.toDirectoryMap()['disponible'], isTrue);
   });
+
+  test('publie les horaires par mode et le prix du personnel de santé', () {
+    final professional =
+        profile(
+          status: ProviderVerificationStatus.approved,
+          visible: true,
+        ).copyWith(
+          atProviderSchedule: 'Lun–Ven, 8 h–16 h',
+          homeVisitSchedule: 'Mar–Jeu, 9 h–15 h',
+          videoSchedule: 'Lun–Sam, 17 h–20 h',
+          defaultPrice: '2 500',
+          atProviderEnabled: true,
+          homeVisitEnabled: true,
+          videoEnabled: true,
+        );
+
+    final directory = professional.toDirectoryMap();
+    expect(directory['prixParDefaut'], '2 500');
+    expect(directory['horairesParMode'], {
+      'inPerson': 'Lun–Ven, 8 h–16 h',
+      'homeVisit': 'Mar–Jeu, 9 h–15 h',
+      'video': 'Lun–Sam, 17 h–20 h',
+    });
+    expect(directory['modesDeRendezVous'], {
+      'inPerson': true,
+      'homeVisit': true,
+      'video': true,
+    });
+  });
 }

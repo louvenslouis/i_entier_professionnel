@@ -60,6 +60,13 @@ class ProviderProfile {
   final String qualifications;
   final String services;
   final String schedule;
+  final String atProviderSchedule;
+  final String homeVisitSchedule;
+  final String videoSchedule;
+  final String defaultPrice;
+  final bool atProviderEnabled;
+  final bool homeVisitEnabled;
+  final bool videoEnabled;
   final bool available;
   final bool isVisible;
   final ProviderVerificationStatus verificationStatus;
@@ -84,6 +91,13 @@ class ProviderProfile {
     required this.qualifications,
     required this.services,
     required this.schedule,
+    this.atProviderSchedule = '',
+    this.homeVisitSchedule = '',
+    this.videoSchedule = '',
+    this.defaultPrice = '',
+    this.atProviderEnabled = false,
+    this.homeVisitEnabled = false,
+    this.videoEnabled = false,
     required this.available,
     required this.isVisible,
     required this.verificationStatus,
@@ -130,6 +144,13 @@ class ProviderProfile {
     String? qualifications,
     String? services,
     String? schedule,
+    String? atProviderSchedule,
+    String? homeVisitSchedule,
+    String? videoSchedule,
+    String? defaultPrice,
+    bool? atProviderEnabled,
+    bool? homeVisitEnabled,
+    bool? videoEnabled,
     bool? available,
     bool? isVisible,
     ProviderVerificationStatus? verificationStatus,
@@ -153,6 +174,13 @@ class ProviderProfile {
     qualifications: qualifications ?? this.qualifications,
     services: services ?? this.services,
     schedule: schedule ?? this.schedule,
+    atProviderSchedule: atProviderSchedule ?? this.atProviderSchedule,
+    homeVisitSchedule: homeVisitSchedule ?? this.homeVisitSchedule,
+    videoSchedule: videoSchedule ?? this.videoSchedule,
+    defaultPrice: defaultPrice ?? this.defaultPrice,
+    atProviderEnabled: atProviderEnabled ?? this.atProviderEnabled,
+    homeVisitEnabled: homeVisitEnabled ?? this.homeVisitEnabled,
+    videoEnabled: videoEnabled ?? this.videoEnabled,
     available: available ?? this.available,
     isVisible: isVisible ?? this.isVisible,
     verificationStatus: verificationStatus ?? this.verificationStatus,
@@ -183,6 +211,13 @@ class ProviderProfile {
       qualifications: text('qualifications'),
       services: text('services'),
       schedule: text('schedule'),
+      atProviderSchedule: text('atProviderSchedule'),
+      homeVisitSchedule: text('homeVisitSchedule'),
+      videoSchedule: text('videoSchedule'),
+      defaultPrice: text('defaultPrice'),
+      atProviderEnabled: data['atProviderEnabled'] == true,
+      homeVisitEnabled: data['homeVisitEnabled'] == true,
+      videoEnabled: data['videoEnabled'] == true,
       available: data['available'] != false,
       isVisible: data['isVisible'] == true,
       verificationStatus: ProviderVerificationStatusText.fromStorage(
@@ -223,6 +258,13 @@ class ProviderProfile {
     'qualifications': qualifications.trim(),
     'services': services.trim(),
     'schedule': schedule.trim(),
+    'atProviderSchedule': atProviderSchedule.trim(),
+    'homeVisitSchedule': homeVisitSchedule.trim(),
+    'videoSchedule': videoSchedule.trim(),
+    'defaultPrice': defaultPrice.trim(),
+    'atProviderEnabled': atProviderEnabled,
+    'homeVisitEnabled': homeVisitEnabled,
+    'videoEnabled': videoEnabled,
     'available': available,
     'isVisible': isApproved && isVisible,
     'termsAccepted': termsAccepted,
@@ -243,6 +285,17 @@ class ProviderProfile {
           'qualification': qualifications.trim(),
           'services': services.trim(),
           'horaires': schedule.trim(),
+          'horairesParMode': {
+            'inPerson': atProviderSchedule.trim(),
+            'homeVisit': homeVisitSchedule.trim(),
+            'video': videoSchedule.trim(),
+          },
+          'modesDeRendezVous': {
+            'inPerson': atProviderEnabled,
+            'homeVisit': homeVisitEnabled,
+            'video': videoEnabled,
+          },
+          'prixParDefaut': defaultPrice.trim(),
           'adresse': address.trim(),
           'telephone': phone.trim(),
           'email': email.trim(),

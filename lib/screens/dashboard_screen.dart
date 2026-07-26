@@ -725,6 +725,13 @@ class _ProfileSummary extends StatelessWidget {
         _SummaryLine(icon: Icons.location_on_outlined, label: profile.address),
         _SummaryLine(icon: Icons.phone_outlined, label: profile.phone),
         _SummaryLine(icon: Icons.schedule_outlined, label: profile.schedule),
+        if (profile.accountType == ProviderAccountType.professional)
+          _SummaryLine(
+            icon: Icons.payments_outlined,
+            label: profile.defaultPrice.isEmpty
+                ? 'Prix par défaut non renseigné'
+                : '${profile.defaultPrice} HTG',
+          ),
       ],
     ),
   );
@@ -880,6 +887,15 @@ class _ProfilePreview extends StatelessWidget {
                         label: 'Horaires',
                         value: profile.schedule,
                       ),
+                      if (profile.accountType ==
+                          ProviderAccountType.professional)
+                        _PreviewInfo(
+                          icon: Icons.payments_outlined,
+                          label: 'Prix indicatif',
+                          value: profile.defaultPrice.isEmpty
+                              ? 'À confirmer'
+                              : '${profile.defaultPrice} HTG',
+                        ),
                       _PreviewInfo(
                         icon: Icons.location_on_outlined,
                         label: 'Adresse',
