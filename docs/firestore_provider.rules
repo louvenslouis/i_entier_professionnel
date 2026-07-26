@@ -15,13 +15,10 @@ function validProviderProfile(data) {
       'rejectionReason', 'termsAccepted', 'createdAt', 'updatedAt'
     ])
     && data.keys().hasAll([
-      'ownerUid', 'accountType', 'displayName', 'category',
-      'registrationNumber', 'contactPerson', 'workplace', 'phone', 'email',
+          'ownerUid', 'accountType', 'displayName', 'category',
+          'registrationNumber', 'contactPerson', 'workplace', 'phone', 'email',
           'address', 'description', 'experience', 'qualifications', 'services',
-          'schedule', 'atProviderSchedule', 'homeVisitSchedule', 'videoSchedule',
-          'defaultPrice', 'institutionPricesPublished', 'servicePrices',
-          'roomPrices', 'availabilityConfigurations', 'atProviderEnabled',
-          'homeVisitEnabled', 'videoEnabled', 'available', 'isVisible', 'verificationStatus',
+          'schedule', 'available', 'isVisible', 'verificationStatus',
       'rejectionReason', 'termsAccepted', 'createdAt', 'updatedAt'
     ])
     && data.accountType in ['professional', 'institution']
@@ -86,23 +83,39 @@ function validProviderProfile(data) {
         && data.schedule is string
         && data.schedule.size() > 1
         && data.schedule.size() <= 500
-        && data.atProviderSchedule is string
-        && data.atProviderSchedule.size() <= 500
-        && data.homeVisitSchedule is string
-        && data.homeVisitSchedule.size() <= 500
-        && data.videoSchedule is string
-        && data.videoSchedule.size() <= 500
-        && data.defaultPrice is string
-        && data.defaultPrice.size() <= 80
-        && data.institutionPricesPublished is bool
-        && data.servicePrices is string
-        && data.servicePrices.size() <= 1200
-        && data.roomPrices is string
-        && data.roomPrices.size() <= 1200
-        && data.availabilityConfigurations is map
-        && data.atProviderEnabled is bool
-        && data.homeVisitEnabled is bool
-        && data.videoEnabled is bool
+        && (
+          !data.keys().hasAny([
+            'atProviderSchedule', 'homeVisitSchedule', 'videoSchedule',
+            'defaultPrice', 'institutionPricesPublished', 'servicePrices',
+            'roomPrices', 'availabilityConfigurations', 'atProviderEnabled',
+            'homeVisitEnabled', 'videoEnabled'
+          ])
+          || (
+            data.keys().hasAll([
+              'atProviderSchedule', 'homeVisitSchedule', 'videoSchedule',
+              'defaultPrice', 'institutionPricesPublished', 'servicePrices',
+              'roomPrices', 'availabilityConfigurations', 'atProviderEnabled',
+              'homeVisitEnabled', 'videoEnabled'
+            ])
+            && data.atProviderSchedule is string
+            && data.atProviderSchedule.size() <= 500
+            && data.homeVisitSchedule is string
+            && data.homeVisitSchedule.size() <= 500
+            && data.videoSchedule is string
+            && data.videoSchedule.size() <= 500
+            && data.defaultPrice is string
+            && data.defaultPrice.size() <= 80
+            && data.institutionPricesPublished is bool
+            && data.servicePrices is string
+            && data.servicePrices.size() <= 1200
+            && data.roomPrices is string
+            && data.roomPrices.size() <= 1200
+            && data.availabilityConfigurations is map
+            && data.atProviderEnabled is bool
+            && data.homeVisitEnabled is bool
+            && data.videoEnabled is bool
+          )
+        )
     && data.available is bool
     && data.isVisible is bool
     && data.verificationStatus in ['pending', 'approved', 'rejected']
@@ -143,8 +156,12 @@ match /providerProfiles/{providerId} {
     && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
       'displayName', 'category', 'registrationNumber', 'contactPerson',
       'workplace', 'linkedInstitutionId', 'linkedInstitutionName', 'phone',
-      'email', 'address', 'description', 'experience', 'qualifications',
-      'services', 'schedule', 'available', 'isVisible', 'termsAccepted',
+          'email', 'address', 'description', 'experience', 'qualifications',
+          'services', 'schedule', 'atProviderSchedule', 'homeVisitSchedule',
+          'videoSchedule', 'defaultPrice', 'institutionPricesPublished',
+          'servicePrices', 'roomPrices', 'availabilityConfigurations',
+          'atProviderEnabled', 'homeVisitEnabled', 'videoEnabled', 'available',
+          'isVisible', 'termsAccepted',
       'updatedAt'
     ])
     && request.resource.data.ownerUid == resource.data.ownerUid
