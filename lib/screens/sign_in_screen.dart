@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -24,7 +23,7 @@ class _ProSignInScreenState extends State<ProSignInScreen> {
     try {
       await SupabaseConfig.client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: kIsWeb ? null : SupabaseConfig.oauthRedirectUrl,
+        redirectTo: SupabaseConfig.authRedirectUrl,
         queryParams: const {'prompt': 'select_account'},
       );
     } on AuthException catch (error) {
