@@ -10,6 +10,14 @@ abstract class ProfessionalAppointmentRepository {
     required ProfessionalAppointmentStatus status,
     required String responseNote,
   });
+
+  Future<void> update({
+    required ProfessionalAppointment appointment,
+    required DateTime scheduledAt,
+    required String responseNote,
+  });
+
+  Future<void> deleteForProvider(ProfessionalAppointment appointment);
 }
 
 class SupabaseProfessionalAppointmentRepository
@@ -30,6 +38,7 @@ class SupabaseProfessionalAppointmentRepository
           .map(
             (rows) => rows
                 .map(ProfessionalAppointment.fromRow)
+                .where((appointment) => !appointment.providerHidden)
                 .toList(growable: false),
           );
 
@@ -49,6 +58,38 @@ class SupabaseProfessionalAppointmentRepository
             'p_provider_id': appointment.providerId,
             'p_new_status': status.storageValue,
             'p_response_note': responseNote.trim(),
+          },
+        );
+  }
+
+  @override
+  Future<void> update({
+    required ProfessionalAppointment appointment,
+    required DateTime scheduledAt,
+    required String responseNote,
+  }) async {
+    await client
+        .schema('ientier')
+        .rpc(
+          'provider_update_appointment',
+          params: {
+            'p_appointment_id': appointment.id,
+            'p_provider_id': appointment.providerId,
+            'p_scheduled_at': scheduledAt.toUtc().toIso8601String(),
+            'p_response_note': responseNote.trim(),
+          },
+        );
+  }
+
+  @override
+  Future<void> deleteForProvider(ProfessionalAppointment appointment) async {
+    await client
+        .schema('ientier')
+        .rpc(
+          'hide_appointment_for_actor',
+          params: {
+            'p_appointment_id': appointment.id,
+            'p_actor_type': 'provider',
           },
         );
   }

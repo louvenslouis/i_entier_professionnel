@@ -1,5 +1,33 @@
 enum ProfessionalAppointmentStatus { pending, confirmed, cancelled }
 
+enum ProfessionalAppointmentPaymentMethod {
+  cash,
+  monCash,
+  natCash,
+  bankTransfer,
+  card,
+}
+
+extension ProfessionalAppointmentPaymentMethodText
+    on ProfessionalAppointmentPaymentMethod {
+  String get label => switch (this) {
+    ProfessionalAppointmentPaymentMethod.cash => 'Espèces',
+    ProfessionalAppointmentPaymentMethod.monCash => 'MonCash',
+    ProfessionalAppointmentPaymentMethod.natCash => 'NatCash',
+    ProfessionalAppointmentPaymentMethod.bankTransfer => 'Virement bancaire',
+    ProfessionalAppointmentPaymentMethod.card => 'Carte bancaire',
+  };
+
+  static ProfessionalAppointmentPaymentMethod fromStorage(Object? value) =>
+      switch (value) {
+        'monCash' => ProfessionalAppointmentPaymentMethod.monCash,
+        'natCash' => ProfessionalAppointmentPaymentMethod.natCash,
+        'bankTransfer' => ProfessionalAppointmentPaymentMethod.bankTransfer,
+        'card' => ProfessionalAppointmentPaymentMethod.card,
+        _ => ProfessionalAppointmentPaymentMethod.cash,
+      };
+}
+
 enum ProfessionalAppointmentMode { atProvider, homeVisit, video }
 
 extension ProfessionalAppointmentModeText on ProfessionalAppointmentMode {
@@ -53,6 +81,7 @@ class ProfessionalAppointment {
   final String providerName;
   final String service;
   final ProfessionalAppointmentMode mode;
+  final ProfessionalAppointmentPaymentMethod paymentMethod;
   final String location;
   final DateTime scheduledAt;
   final String scheduleLabel;
@@ -62,6 +91,10 @@ class ProfessionalAppointment {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? respondedAt;
+  final String cancellationNote;
+  final String cancelledBy;
+  final DateTime? cancelledAt;
+  final bool providerHidden;
 
   const ProfessionalAppointment({
     required this.id,
@@ -72,6 +105,7 @@ class ProfessionalAppointment {
     required this.providerName,
     required this.service,
     this.mode = ProfessionalAppointmentMode.atProvider,
+    this.paymentMethod = ProfessionalAppointmentPaymentMethod.cash,
     this.location = '',
     required this.scheduledAt,
     required this.scheduleLabel,
@@ -81,6 +115,10 @@ class ProfessionalAppointment {
     required this.createdAt,
     required this.updatedAt,
     this.respondedAt,
+    this.cancellationNote = '',
+    this.cancelledBy = '',
+    this.cancelledAt,
+    this.providerHidden = false,
   });
 
   factory ProfessionalAppointment.fromRow(Map<String, dynamic> data) {
@@ -106,6 +144,9 @@ class ProfessionalAppointment {
       providerName: text('provider_name_snapshot'),
       service: text('service_name_snapshot'),
       mode: ProfessionalAppointmentModeText.fromStorage(data['mode']),
+      paymentMethod: ProfessionalAppointmentPaymentMethodText.fromStorage(
+        data['payment_method'],
+      ),
       location: text('location'),
       scheduledAt: date('scheduled_at'),
       scheduleLabel: text('schedule_label'),
@@ -115,6 +156,10 @@ class ProfessionalAppointment {
       createdAt: createdAt,
       updatedAt: date('updated_at', createdAt),
       respondedAt: data['responded_at'] == null ? null : date('responded_at'),
+      cancellationNote: text('cancellation_note'),
+      cancelledBy: text('cancelled_by'),
+      cancelledAt: data['cancelled_at'] == null ? null : date('cancelled_at'),
+      providerHidden: data['provider_hidden'] == true,
     );
   }
 }

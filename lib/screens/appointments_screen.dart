@@ -113,6 +113,185 @@ class _ProAppointmentsScreenState extends State<ProAppointmentsScreen> {
     }
   }
 
+  Future<void> _edit(ProfessionalAppointment appointment) async {
+    var selectedDateTime = appointment.scheduledAt;
+    var responseNote = appointment.responseNote;
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Modifier le rendez-vous'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  appointment.patientName,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  key: const ValueKey('edit-professional-appointment-date'),
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: dialogContext,
+                      initialDate: selectedDateTime,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (date == null) return;
+                    setDialogState(() {
+                      selectedDateTime = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        selectedDateTime.hour,
+                        selectedDateTime.minute,
+                      );
+                    });
+                  },
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  label: Text(_shortDate(selectedDateTime)),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  key: const ValueKey('edit-professional-appointment-time'),
+                  onPressed: () async {
+                    final time = await showTimePicker(
+                      context: dialogContext,
+                      initialTime: TimeOfDay.fromDateTime(selectedDateTime),
+                    );
+                    if (time == null) return;
+                    setDialogState(() {
+                      selectedDateTime = DateTime(
+                        selectedDateTime.year,
+                        selectedDateTime.month,
+                        selectedDateTime.day,
+                        time.hour,
+                        time.minute,
+                      );
+                    });
+                  },
+                  icon: const Icon(Icons.schedule_outlined),
+                  label: Text(
+                    '${_twoDigits(selectedDateTime.hour)} h ${_twoDigits(selectedDateTime.minute)}',
+                  ),
+                ),
+                if (appointment.status ==
+                    ProfessionalAppointmentStatus.confirmed) ...[
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    key: const ValueKey('edit-professional-appointment-note'),
+                    initialValue: responseNote,
+                    onChanged: (value) => responseNote = value,
+                    minLines: 2,
+                    maxLines: 4,
+                    maxLength: 500,
+                    decoration: const InputDecoration(
+                      labelText: 'Instructions au patient (facultatif)',
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Retour'),
+            ),
+            FilledButton(
+              key: const ValueKey('save-professional-appointment-changes'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Enregistrer'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (save != true || !mounted) return;
+    if (!selectedDateTime.isAfter(
+      DateTime.now().add(const Duration(minutes: 30)),
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Choisissez un horaire situé à plus de 30 minutes.'),
+        ),
+      );
+      return;
+    }
+    await _runAction(
+      appointment,
+      () => widget.repository.update(
+        appointment: appointment,
+        scheduledAt: selectedDateTime,
+        responseNote: responseNote,
+      ),
+      success: 'Rendez-vous modifié et patient notifié.',
+      failure: 'Le rendez-vous n’a pas pu être modifié.',
+    );
+  }
+
+  Future<void> _delete(ProfessionalAppointment appointment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Supprimer ce rendez-vous ?'),
+        content: const Text(
+          'Il disparaîtra uniquement de votre interface. Le patient conservera son historique.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Retour'),
+          ),
+          FilledButton(
+            key: const ValueKey('confirm-professional-appointment-deletion'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFB42318),
+            ),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _runAction(
+      appointment,
+      () => widget.repository.deleteForProvider(appointment),
+      success: 'Rendez-vous supprimé de votre interface.',
+      failure: 'Le rendez-vous n’a pas pu être supprimé.',
+    );
+  }
+
+  Future<void> _runAction(
+    ProfessionalAppointment appointment,
+    Future<void> Function() action, {
+    required String success,
+    required String failure,
+  }) async {
+    setState(() => _processingId = appointment.id);
+    try {
+      await action();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(success)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure)));
+      }
+    } finally {
+      if (mounted) setState(() => _processingId = null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Column(
     key: const ValueKey('professional-appointments-page'),
@@ -121,7 +300,7 @@ class _ProAppointmentsScreenState extends State<ProAppointmentsScreen> {
       Text('Rendez-vous', style: Theme.of(context).textTheme.headlineMedium),
       const SizedBox(height: 6),
       const Text(
-        'Validez, annulez ou gardez les demandes de vos patients en attente.',
+        'Validez, modifiez, annulez ou supprimez vos rendez-vous.',
         style: TextStyle(color: ProColors.muted, fontSize: 15),
       ),
       const SizedBox(height: 22),
@@ -212,21 +391,43 @@ class _ProAppointmentsScreenState extends State<ProAppointmentsScreen> {
                   _AppointmentRequestCard(
                     appointment: appointment,
                     processing: _processingId == appointment.id,
-                    onConfirm: () => _respond(
-                      appointment,
-                      ProfessionalAppointmentStatus.confirmed,
-                    ),
-                    onCancel: () => _respond(
-                      appointment,
-                      ProfessionalAppointmentStatus.cancelled,
-                    ),
-                    onKeepPending: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('La demande reste en attente.'),
-                        ),
-                      );
-                    },
+                    onConfirm:
+                        appointment.status ==
+                            ProfessionalAppointmentStatus.pending
+                        ? () => _respond(
+                            appointment,
+                            ProfessionalAppointmentStatus.confirmed,
+                          )
+                        : null,
+                    onEdit:
+                        appointment.status !=
+                            ProfessionalAppointmentStatus.cancelled
+                        ? () => _edit(appointment)
+                        : null,
+                    onCancel:
+                        appointment.status !=
+                            ProfessionalAppointmentStatus.cancelled
+                        ? () => _respond(
+                            appointment,
+                            ProfessionalAppointmentStatus.cancelled,
+                          )
+                        : null,
+                    onDelete:
+                        appointment.status ==
+                            ProfessionalAppointmentStatus.cancelled
+                        ? () => _delete(appointment)
+                        : null,
+                    onKeepPending:
+                        appointment.status ==
+                            ProfessionalAppointmentStatus.pending
+                        ? () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('La demande reste en attente.'),
+                              ),
+                            );
+                          }
+                        : null,
                   ),
                   const SizedBox(height: 13),
                 ],
@@ -246,16 +447,20 @@ int _count(
 class _AppointmentRequestCard extends StatelessWidget {
   final ProfessionalAppointment appointment;
   final bool processing;
-  final VoidCallback onConfirm;
-  final VoidCallback onCancel;
-  final VoidCallback onKeepPending;
+  final VoidCallback? onConfirm;
+  final VoidCallback? onEdit;
+  final VoidCallback? onCancel;
+  final VoidCallback? onDelete;
+  final VoidCallback? onKeepPending;
 
   const _AppointmentRequestCard({
     required this.appointment,
     required this.processing,
-    required this.onConfirm,
-    required this.onCancel,
-    required this.onKeepPending,
+    this.onConfirm,
+    this.onEdit,
+    this.onCancel,
+    this.onDelete,
+    this.onKeepPending,
   });
 
   @override
@@ -341,6 +546,11 @@ class _AppointmentRequestCard extends StatelessWidget {
             icon: _modeIcon(appointment.mode),
             text: appointment.mode.label,
           ),
+          const SizedBox(height: 10),
+          _RequestInformation(
+            icon: _paymentMethodIcon(appointment.paymentMethod),
+            text: 'Paiement : ${appointment.paymentMethod.label}',
+          ),
           if (appointment.location.isNotEmpty) ...[
             const SizedBox(height: 10),
             _RequestInformation(
@@ -362,7 +572,21 @@ class _AppointmentRequestCard extends StatelessWidget {
               style: TextStyle(color: statusColor, fontWeight: FontWeight.w700),
             ),
           ],
-          if (pending) ...[
+          if (appointment.cancellationNote.isNotEmpty) ...[
+            const Divider(height: 28, color: ProColors.border),
+            Text(
+              'Annulation${appointment.cancelledBy == 'patient' ? ' par le patient' : ''} : ${appointment.cancellationNote}',
+              style: const TextStyle(
+                color: Color(0xFFB42318),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          if (onConfirm != null ||
+              onEdit != null ||
+              onCancel != null ||
+              onDelete != null ||
+              onKeepPending != null) ...[
             const Divider(height: 28, color: ProColors.border),
             if (processing)
               const LinearProgressIndicator(color: ProColors.primary)
@@ -371,22 +595,45 @@ class _AppointmentRequestCard extends StatelessWidget {
                 spacing: 9,
                 runSpacing: 9,
                 children: [
-                  FilledButton.icon(
-                    key: ValueKey('confirm-${appointment.id}'),
-                    onPressed: onConfirm,
-                    icon: const Icon(Icons.check_rounded, size: 18),
-                    label: const Text('Valider'),
-                  ),
-                  OutlinedButton.icon(
-                    key: ValueKey('cancel-${appointment.id}'),
-                    onPressed: onCancel,
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                    label: const Text('Annuler'),
-                  ),
-                  TextButton(
-                    onPressed: onKeepPending,
-                    child: const Text('Garder en attente'),
-                  ),
+                  if (onConfirm != null)
+                    FilledButton.icon(
+                      key: ValueKey('confirm-${appointment.id}'),
+                      onPressed: onConfirm,
+                      icon: const Icon(Icons.check_rounded, size: 18),
+                      label: const Text('Valider'),
+                    ),
+                  if (onEdit != null)
+                    OutlinedButton.icon(
+                      key: ValueKey('edit-${appointment.id}'),
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      label: const Text('Modifier'),
+                    ),
+                  if (onCancel != null)
+                    OutlinedButton.icon(
+                      key: ValueKey('cancel-${appointment.id}'),
+                      onPressed: onCancel,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFB42318),
+                      ),
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      label: const Text('Annuler'),
+                    ),
+                  if (onDelete != null)
+                    TextButton.icon(
+                      key: ValueKey('delete-${appointment.id}'),
+                      onPressed: onDelete,
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFB42318),
+                      ),
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: const Text('Supprimer'),
+                    ),
+                  if (pending && onKeepPending != null)
+                    TextButton(
+                      onPressed: onKeepPending,
+                      child: const Text('Garder en attente'),
+                    ),
                 ],
               ),
           ],
@@ -473,11 +720,26 @@ String _initials(String name) {
 
 String _twoDigits(int value) => value.toString().padLeft(2, '0');
 
+String _shortDate(DateTime value) =>
+    '${_twoDigits(value.day)}/${_twoDigits(value.month)}/${value.year}';
+
 IconData _modeIcon(ProfessionalAppointmentMode mode) => switch (mode) {
   ProfessionalAppointmentMode.atProvider => Icons.directions_walk_rounded,
   ProfessionalAppointmentMode.homeVisit => Icons.home_work_rounded,
   ProfessionalAppointmentMode.video => Icons.video_camera_front_rounded,
 };
+
+IconData _paymentMethodIcon(ProfessionalAppointmentPaymentMethod method) =>
+    switch (method) {
+      ProfessionalAppointmentPaymentMethod.cash => Icons.payments_outlined,
+      ProfessionalAppointmentPaymentMethod.monCash =>
+        Icons.phone_android_rounded,
+      ProfessionalAppointmentPaymentMethod.natCash =>
+        Icons.account_balance_wallet_outlined,
+      ProfessionalAppointmentPaymentMethod.bankTransfer =>
+        Icons.account_balance_outlined,
+      ProfessionalAppointmentPaymentMethod.card => Icons.credit_card_rounded,
+    };
 
 String _longDateTime(DateTime value) {
   const weekdays = [

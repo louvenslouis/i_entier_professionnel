@@ -64,6 +64,9 @@ class FakeAppointmentRepository implements ProfessionalAppointmentRepository {
   final List<ProfessionalAppointment> appointments;
   ProfessionalAppointmentStatus? responseStatus;
   String? responseNote;
+  ProfessionalAppointment? updatedAppointment;
+  ProfessionalAppointment? deletedAppointment;
+  DateTime? updatedScheduledAt;
 
   FakeAppointmentRepository(this.appointments);
 
@@ -75,6 +78,22 @@ class FakeAppointmentRepository implements ProfessionalAppointmentRepository {
   }) async {
     responseStatus = status;
     this.responseNote = responseNote;
+  }
+
+  @override
+  Future<void> update({
+    required ProfessionalAppointment appointment,
+    required DateTime scheduledAt,
+    required String responseNote,
+  }) async {
+    updatedAppointment = appointment;
+    updatedScheduledAt = scheduledAt;
+    this.responseNote = responseNote;
+  }
+
+  @override
+  Future<void> deleteForProvider(ProfessionalAppointment appointment) async {
+    deletedAppointment = appointment;
   }
 
   @override
@@ -113,7 +132,9 @@ ProviderProfile profile({
 
 Widget app(Widget home) => MaterialApp(theme: buildProTheme(), home: home);
 
-ProfessionalAppointment appointment() => ProfessionalAppointment(
+ProfessionalAppointment appointment({
+  ProfessionalAppointmentStatus status = ProfessionalAppointmentStatus.pending,
+}) => ProfessionalAppointment(
   id: 'appointment-1',
   patientId: 'patient-1',
   patientName: 'Jean Baptiste',
@@ -122,9 +143,10 @@ ProfessionalAppointment appointment() => ProfessionalAppointment(
   providerName: 'Dr Marie Jean',
   service: 'Consultation',
   mode: ProfessionalAppointmentMode.video,
-  scheduledAt: DateTime(2026, 8, 4, 9, 30),
+  paymentMethod: ProfessionalAppointmentPaymentMethod.monCash,
+  scheduledAt: DateTime.now().add(const Duration(days: 7)),
   scheduleLabel: 'Lun–Ven, 8 h–16 h',
-  status: ProfessionalAppointmentStatus.pending,
+  status: status,
   patientNote: 'Consultation de suivi',
   responseNote: '',
   createdAt: DateTime(2026, 7, 22),
@@ -383,6 +405,7 @@ void main() {
     expect(find.text('Jean Baptiste'), findsOneWidget);
     expect(find.text('Consultation de suivi'), findsOneWidget);
     expect(find.text('Visioconférence'), findsOneWidget);
+    expect(find.text('Paiement : MonCash'), findsOneWidget);
     expect(find.text('En attente'), findsWidgets);
 
     await tester.tap(find.text('Valider'));
@@ -406,6 +429,98 @@ void main() {
     );
     expect(appointments.responseNote, 'Votre rendez-vous est confirmé.');
     expect(find.textContaining('patient notifié'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('modifie et annule un rendez-vous confirmé', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final professionalRepository = FakeProfessionalRepository();
+    final confirmed = appointment(
+      status: ProfessionalAppointmentStatus.confirmed,
+    );
+    final appointments = FakeAppointmentRepository([confirmed]);
+
+    await tester.pumpWidget(
+      app(
+        ProDashboardScreen(
+          profile: profile(status: ProviderVerificationStatus.approved),
+          repository: professionalRepository,
+          appointmentRepository: appointments,
+          onSignOut: () async {},
+        ),
+      ),
+    );
+    await tester.tap(find.text('Rendez-vous'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('edit-appointment-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('Modifier le rendez-vous'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const ValueKey('edit-professional-appointment-note')),
+      'Nouvelle instruction',
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('save-professional-appointment-changes')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(appointments.updatedAppointment, confirmed);
+    expect(appointments.responseNote, 'Nouvelle instruction');
+
+    final cancelButton = find.byKey(const ValueKey('cancel-appointment-1'));
+    await tester.ensureVisible(cancelButton);
+    await tester.tap(cancelButton);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextField),
+      'Indisponibilité exceptionnelle',
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('confirm-appointment-response')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      appointments.responseStatus,
+      ProfessionalAppointmentStatus.cancelled,
+    );
+    expect(appointments.responseNote, 'Indisponibilité exceptionnelle');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('supprime un rendez-vous annulé de l’interface professionnelle', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final professionalRepository = FakeProfessionalRepository();
+    final cancelled = appointment(
+      status: ProfessionalAppointmentStatus.cancelled,
+    );
+    final appointments = FakeAppointmentRepository([cancelled]);
+
+    await tester.pumpWidget(
+      app(
+        ProDashboardScreen(
+          profile: profile(status: ProviderVerificationStatus.approved),
+          repository: professionalRepository,
+          appointmentRepository: appointments,
+          onSignOut: () async {},
+        ),
+      ),
+    );
+    await tester.tap(find.text('Rendez-vous'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('delete-appointment-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('confirm-professional-appointment-deletion')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(appointments.deletedAppointment, cancelled);
     expect(tester.takeException(), isNull);
   });
 
