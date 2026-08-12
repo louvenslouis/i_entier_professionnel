@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../data/appointment_repository.dart';
 import '../data/professional_repository.dart';
+import '../data/traditional_medicine_repository.dart';
 import '../models/provider_profile.dart';
 import '../supabase_config.dart';
 import '../theme/pro_theme.dart';
 import 'appointments_screen.dart';
 import 'institution_link_screen.dart';
+import 'mobile_clinic_screen.dart';
 import 'registration_screen.dart';
+import 'traditional_medicine_screen.dart';
 
 class ProDashboardScreen extends StatefulWidget {
   final ProviderProfile profile;
@@ -33,6 +36,9 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
   late final ProfessionalAppointmentRepository _appointmentRepository =
       widget.appointmentRepository ??
       SupabaseProfessionalAppointmentRepository();
+  late final TraditionalMedicineProfessionalRepository
+  _traditionalMedicineRepository =
+      SupabaseTraditionalMedicineProfessionalRepository();
 
   Future<void> _setVisibility(bool value) async {
     setState(() => _updating = true);
@@ -83,6 +89,7 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
       final desktop = constraints.maxWidth >= 900;
       final isProfessional =
           widget.profile.accountType == ProviderAccountType.professional;
+      final clinicIndex = isProfessional ? 4 : 2;
       final content = switch (_selectedIndex) {
         0 => _DashboardOverview(
           profile: widget.profile,
@@ -95,9 +102,16 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
           profile: widget.profile,
           repository: _appointmentRepository,
         ),
-        2 when isProfessional => InstitutionLinkScreen(
+        2 when isProfessional => TraditionalMedicineProfessionalScreen(
+          profile: widget.profile,
+          repository: _traditionalMedicineRepository,
+        ),
+        3 when isProfessional => InstitutionLinkScreen(
           profile: widget.profile,
           repository: widget.repository,
+        ),
+        _ when _selectedIndex == clinicIndex => MobileClinicScreen(
+          profile: widget.profile,
         ),
         _ => _ProfilePreview(profile: widget.profile, onEdit: _editProfile),
       };
@@ -163,10 +177,21 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
                   ),
                   if (isProfessional)
                     const NavigationDestination(
+                      icon: Icon(Icons.spa_outlined),
+                      selectedIcon: Icon(Icons.spa_rounded),
+                      label: 'Traditionnelle',
+                    ),
+                  if (isProfessional)
+                    const NavigationDestination(
                       icon: Icon(Icons.domain_outlined),
                       selectedIcon: Icon(Icons.domain_rounded),
                       label: 'Institution',
                     ),
+                  const NavigationDestination(
+                    icon: Icon(Icons.local_shipping_outlined),
+                    selectedIcon: Icon(Icons.local_shipping_rounded),
+                    label: 'Clinique Mobile',
+                  ),
                   const NavigationDestination(
                     icon: Icon(Icons.badge_outlined),
                     selectedIcon: Icon(Icons.badge_rounded),
@@ -221,21 +246,39 @@ class _DashboardSidebar extends StatelessWidget {
         const SizedBox(height: 8),
         if (profile.accountType == ProviderAccountType.professional) ...[
           _SidebarItem(
-            icon: Icons.domain_outlined,
-            label: 'Mon institution',
+            icon: Icons.spa_outlined,
+            label: 'Médecine traditionnelle',
             selected: selectedIndex == 2,
             onTap: () => onSelected(2),
           ),
           const SizedBox(height: 8),
+          _SidebarItem(
+            icon: Icons.domain_outlined,
+            label: 'Mon institution',
+            selected: selectedIndex == 3,
+            onTap: () => onSelected(3),
+          ),
+          const SizedBox(height: 8),
         ],
+        _SidebarItem(
+          icon: Icons.local_shipping_outlined,
+          label: 'Clinique Mobile',
+          selected:
+              selectedIndex ==
+              (profile.accountType == ProviderAccountType.professional ? 4 : 2),
+          onTap: () => onSelected(
+            profile.accountType == ProviderAccountType.professional ? 4 : 2,
+          ),
+        ),
+        const SizedBox(height: 8),
         _SidebarItem(
           icon: Icons.badge_outlined,
           label: 'Ma fiche publique',
           selected:
               selectedIndex ==
-              (profile.accountType == ProviderAccountType.professional ? 3 : 2),
+              (profile.accountType == ProviderAccountType.professional ? 5 : 3),
           onTap: () => onSelected(
-            profile.accountType == ProviderAccountType.professional ? 3 : 2,
+            profile.accountType == ProviderAccountType.professional ? 5 : 3,
           ),
         ),
         const Spacer(),
