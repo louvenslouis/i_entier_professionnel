@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/appointment_repository.dart';
+import '../data/insurance_coverage_repository.dart';
 import '../data/professional_repository.dart';
 import '../data/traditional_medicine_repository.dart';
 import '../models/provider_profile.dart';
@@ -8,6 +9,7 @@ import '../supabase_config.dart';
 import '../theme/pro_theme.dart';
 import 'appointments_screen.dart';
 import 'institution_link_screen.dart';
+import 'insurance_coverage_screen.dart';
 import 'mobile_clinic_screen.dart';
 import 'registration_screen.dart';
 import 'traditional_medicine_screen.dart';
@@ -16,6 +18,7 @@ class ProDashboardScreen extends StatefulWidget {
   final ProviderProfile profile;
   final ProfessionalRepository repository;
   final ProfessionalAppointmentRepository? appointmentRepository;
+  final InsuranceCoverageProfessionalRepository? insuranceRepository;
   final Future<void> Function()? onSignOut;
 
   const ProDashboardScreen({
@@ -23,6 +26,7 @@ class ProDashboardScreen extends StatefulWidget {
     required this.profile,
     required this.repository,
     this.appointmentRepository,
+    this.insuranceRepository,
     this.onSignOut,
   });
 
@@ -39,6 +43,9 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
   late final TraditionalMedicineProfessionalRepository
   _traditionalMedicineRepository =
       SupabaseTraditionalMedicineProfessionalRepository();
+  late final InsuranceCoverageProfessionalRepository _insuranceRepository =
+      widget.insuranceRepository ??
+      SupabaseInsuranceCoverageProfessionalRepository();
 
   Future<void> _setVisibility(bool value) async {
     setState(() => _updating = true);
@@ -89,7 +96,7 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
       final desktop = constraints.maxWidth >= 900;
       final isProfessional =
           widget.profile.accountType == ProviderAccountType.professional;
-      final clinicIndex = isProfessional ? 4 : 2;
+      final clinicIndex = isProfessional ? 5 : 2;
       final content = switch (_selectedIndex) {
         0 => _DashboardOverview(
           profile: widget.profile,
@@ -109,6 +116,10 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
         3 when isProfessional => InstitutionLinkScreen(
           profile: widget.profile,
           repository: widget.repository,
+        ),
+        4 when isProfessional => InsuranceCoverageValidationScreen(
+          profile: widget.profile,
+          repository: _insuranceRepository,
         ),
         _ when _selectedIndex == clinicIndex => MobileClinicScreen(
           profile: widget.profile,
@@ -187,6 +198,12 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
                       selectedIcon: Icon(Icons.domain_rounded),
                       label: 'Institution',
                     ),
+                  if (isProfessional)
+                    const NavigationDestination(
+                      icon: Icon(Icons.verified_user_outlined),
+                      selectedIcon: Icon(Icons.verified_user_rounded),
+                      label: 'Couvertures',
+                    ),
                   const NavigationDestination(
                     icon: Icon(Icons.local_shipping_outlined),
                     selectedIcon: Icon(Icons.local_shipping_rounded),
@@ -259,15 +276,22 @@ class _DashboardSidebar extends StatelessWidget {
             onTap: () => onSelected(3),
           ),
           const SizedBox(height: 8),
+          _SidebarItem(
+            icon: Icons.verified_user_outlined,
+            label: 'Couvertures médicales',
+            selected: selectedIndex == 4,
+            onTap: () => onSelected(4),
+          ),
+          const SizedBox(height: 8),
         ],
         _SidebarItem(
           icon: Icons.local_shipping_outlined,
           label: 'Clinique Mobile',
           selected:
               selectedIndex ==
-              (profile.accountType == ProviderAccountType.professional ? 4 : 2),
+              (profile.accountType == ProviderAccountType.professional ? 5 : 2),
           onTap: () => onSelected(
-            profile.accountType == ProviderAccountType.professional ? 4 : 2,
+            profile.accountType == ProviderAccountType.professional ? 5 : 2,
           ),
         ),
         const SizedBox(height: 8),
@@ -276,9 +300,9 @@ class _DashboardSidebar extends StatelessWidget {
           label: 'Ma fiche publique',
           selected:
               selectedIndex ==
-              (profile.accountType == ProviderAccountType.professional ? 5 : 3),
+              (profile.accountType == ProviderAccountType.professional ? 6 : 3),
           onTap: () => onSelected(
-            profile.accountType == ProviderAccountType.professional ? 5 : 3,
+            profile.accountType == ProviderAccountType.professional ? 6 : 3,
           ),
         ),
         const Spacer(),
