@@ -11,7 +11,8 @@ Administration.
 - dossier professionnel et statut de vérification ;
 - publication, visibilité et disponibilité ;
 - liaison d’un professionnel à une institution ;
-- réception et traitement atomique des rendez-vous.
+- réception et traitement atomique des rendez-vous ;
+- page dédiée aux appels vidéo Patient–Professionnel avec LiveKit.
 
 Les profils sont stockés dans `ientier.provider_profiles`. Les rendez-vous sont
 partagés dans `ientier.appointments`; les réponses passent par la fonction SQL
@@ -29,3 +30,9 @@ flutter test
 Le schéma mobile `com.ientier.i_entier_professionnel://login-callback` doit
 figurer dans la liste des Redirect URLs de Supabase Auth. Le schéma SQL et les
 migrations sont maintenus dans `../ientier/supabase/migrations`.
+
+L’activation LiveKit et le nettoyage des salles sont documentés dans
+`../ientier/docs/VIDEO_CALLS_SETUP.md`. Le module `lib/video_calls` est synchronisé
+depuis le dépôt Patient via `python3 tools/sync_video_calls.py` exécuté là-bas.
+Les invitations nécessitent une application ouverte ; la réception native
+quand l’application est fermée n’est pas encore intégrée.

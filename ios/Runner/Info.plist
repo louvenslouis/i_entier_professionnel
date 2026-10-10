@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>UIBackgroundModes</key>
+	<array><string>audio</string></array>
+	<key>NSCameraUsageDescription</key>
+	<string>I-ENTIER utilise la caméra pendant vos appels vidéo.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>I-ENTIER utilise le microphone pendant vos appels vidéo.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

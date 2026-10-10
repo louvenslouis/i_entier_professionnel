@@ -13,6 +13,7 @@ import 'insurance_coverage_screen.dart';
 import 'mobile_clinic_screen.dart';
 import 'registration_screen.dart';
 import 'traditional_medicine_screen.dart';
+import '../video_calls/video_calls_page.dart';
 
 class ProDashboardScreen extends StatefulWidget {
   final ProviderProfile profile;
@@ -133,6 +134,11 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
                 title: const ProBrand(),
                 actions: [
                   IconButton(
+                    tooltip: 'Appels vidéo',
+                    onPressed: () => VideoCallHost.open(context),
+                    icon: const Icon(Icons.videocam_outlined),
+                  ),
+                  IconButton(
                     tooltip: 'Déconnexion',
                     onPressed: _signOut,
                     icon: const Icon(Icons.logout_rounded),
@@ -247,6 +253,13 @@ class _DashboardSidebar extends StatelessWidget {
       children: [
         const ProBrand(),
         const SizedBox(height: 42),
+        _SidebarItem(
+          icon: Icons.videocam_outlined,
+          label: 'Appels vidéo',
+          selected: false,
+          onTap: () => VideoCallHost.open(context),
+        ),
+        const SizedBox(height: 8),
         _SidebarItem(
           icon: Icons.dashboard_outlined,
           label: 'Tableau de bord',

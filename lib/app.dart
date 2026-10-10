@@ -8,6 +8,8 @@ import 'screens/registration_screen.dart';
 import 'screens/sign_in_screen.dart';
 import 'supabase_config.dart';
 import 'theme/pro_theme.dart';
+import 'video_calls/video_call_repository.dart';
+import 'video_calls/video_calls_page.dart';
 
 class IEntierProfessionnelApp extends StatelessWidget {
   final ProfessionalRepository? repository;
@@ -80,7 +82,13 @@ class ProviderProfileGate extends StatelessWidget {
           repository: repository,
         );
       }
-      return ProDashboardScreen(profile: profile, repository: repository);
+      return VideoCallHost(
+        key: ValueKey('video-${user.uid}'),
+        client: SupabaseConfig.client,
+        userId: user.uid,
+        role: VideoCallRole.provider,
+        child: ProDashboardScreen(profile: profile, repository: repository),
+      );
     },
   );
 }
