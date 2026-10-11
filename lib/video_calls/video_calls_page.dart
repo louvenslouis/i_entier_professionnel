@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'video_call_repository.dart';
 import 'video_room_page.dart';
+import 'video_patient_panel.dart';
+import '../consultations/consultation_actions.dart';
 
 const _ink = Color(0xFF142C49);
 const _blue = Color(0xFF1976D2);
@@ -326,6 +328,8 @@ class _VideoCallsPageState extends State<VideoCallsPage> {
                       else
                         for (final appointment in _appointments)
                           _AppointmentCard(
+                            key: ValueKey(appointment.id),
+                            repository: controller.repository,
                             appointment: appointment,
                             busy: _busyId == appointment.id,
                             onCall:
@@ -374,6 +378,15 @@ class _VideoCallsPageState extends State<VideoCallsPage> {
                               subtitle: Text(
                                 '${_date(context, call.createdAt)} · ${call.label}',
                               ),
+                              onTap: controller.repository.consultations == null
+                                  ? null
+                                  : () => showConsultationHistory(
+                                      context,
+                                      repository:
+                                          controller.repository.consultations!,
+                                      appointmentId: call.appointmentId,
+                                      patientName: call.patientName,
+                                    ),
                               trailing:
                                   call.isActive &&
                                       call.expiresAt.isAfter(DateTime.now()) &&
@@ -386,7 +399,23 @@ class _VideoCallsPageState extends State<VideoCallsPage> {
                                         color: _blue,
                                       ),
                                     )
-                                  : null,
+                                  : controller.repository.consultations == null
+                                  ? null
+                                  : IconButton(
+                                      tooltip: 'Consultation',
+                                      onPressed: () => showConsultationHistory(
+                                        context,
+                                        repository: controller
+                                            .repository
+                                            .consultations!,
+                                        appointmentId: call.appointmentId,
+                                        patientName: call.patientName,
+                                      ),
+                                      icon: const Icon(
+                                        Icons.assignment_outlined,
+                                        color: _blue,
+                                      ),
+                                    ),
                             ),
                           ),
                     ],
@@ -408,10 +437,13 @@ String _date(BuildContext context, DateTime value) {
 }
 
 class _AppointmentCard extends StatelessWidget {
+  final VideoCallRepository repository;
   final VideoAppointment appointment;
   final bool busy;
   final VoidCallback? onCall;
   const _AppointmentCard({
+    super.key,
+    required this.repository,
     required this.appointment,
     required this.busy,
     this.onCall,
@@ -455,6 +487,10 @@ class _AppointmentCard extends StatelessWidget {
             style: const TextStyle(color: Color(0xFF65758A)),
           ),
           const SizedBox(height: 16),
+          VideoPatientDisclosure(
+            repository: repository,
+            appointment: appointment,
+          ),
           Align(
             alignment: Alignment.centerRight,
             child: FilledButton.icon(

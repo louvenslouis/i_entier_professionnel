@@ -2,8 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../consultations/consultation_repository.dart';
 
 enum VideoCallRole { patient, provider }
+
+extension VideoCallConsultations on VideoCallRepository {
+  ConsultationRepository? get consultations {
+    final source = this;
+    if (source is! SupabaseVideoCallRepository ||
+        source.role != VideoCallRole.provider) {
+      return null;
+    }
+    return SupabaseConsultationRepository(
+      client: source.client,
+      userId: source.userId,
+    );
+  }
+}
 
 class VideoCall {
   final int revision;
@@ -89,6 +104,7 @@ abstract class VideoCallRepository {
     String? callId,
   });
   Future<List<VideoAppointment>> appointments();
+  Future<VideoPatientDetails?> patientDetails(String appointmentId);
   void dispose();
 }
 
@@ -184,10 +200,50 @@ class SupabaseVideoCallRepository implements VideoCallRepository {
   }
 
   @override
+  Future<VideoPatientDetails?> patientDetails(String appointmentId) async {
+    if (client.auth.currentUser?.id != userId) {
+      throw const VideoCallException('unauthorized');
+    }
+    if (role != VideoCallRole.provider) return null;
+    final result = await client
+        .schema('ientier')
+        .rpc(
+          'video_patient_details',
+          params: {'p_appointment_id': appointmentId},
+        )
+        .timeout(const Duration(seconds: 20));
+    return result == null
+        ? null
+        : VideoPatientDetails(Map<String, dynamic>.from(result as Map));
+  }
+
+  @override
   void dispose() {
     unawaited(client.removeChannel(_channel));
     unawaited(_changes.close());
   }
+}
+
+class VideoPatientDetails {
+  final Map<String, dynamic> data;
+  const VideoPatientDetails(this.data);
+
+  String text(String key) => data[key]?.toString().trim() ?? '';
+  int? ageAt(DateTime now) {
+    final birth = DateTime.tryParse(text('birth_date'));
+    if (birth == null || birth.isAfter(now)) return null;
+    return now.year -
+        birth.year -
+        (now.month < birth.month ||
+                (now.month == birth.month && now.day < birth.day)
+            ? 1
+            : 0);
+  }
+
+  List<Map<String, dynamic>> get medicalItems =>
+      (data['medical_items'] as List? ?? const [])
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
 }
 
 class VideoCallController extends ChangeNotifier {
