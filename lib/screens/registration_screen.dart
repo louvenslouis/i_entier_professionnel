@@ -712,7 +712,7 @@ class _RegistrationHeading extends StatelessWidget {
           style: const TextStyle(
             color: ProColors.primaryDark,
             fontSize: 11,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
             letterSpacing: .8,
           ),
         ),
@@ -841,7 +841,7 @@ class _AccountTypeCard extends StatelessWidget {
                     style: const TextStyle(
                       color: ProColors.ink,
                       fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -898,7 +898,7 @@ class _FormSectionTitle extends StatelessWidget {
             number!,
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
@@ -913,7 +913,7 @@ class _FormSectionTitle extends StatelessWidget {
               style: const TextStyle(
                 color: ProColors.ink,
                 fontSize: 18,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 4),
@@ -979,7 +979,7 @@ class _SuggestedChoices extends StatelessWidget {
         style: const TextStyle(
           color: ProColors.ink,
           fontSize: 13,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w600,
         ),
       ),
       const SizedBox(height: 4),
@@ -1005,7 +1005,7 @@ class _SuggestedChoices extends StatelessWidget {
                     ? ProColors.primaryDark
                     : ProColors.ink,
                 fontWeight: isSelected(choice)
-                    ? FontWeight.w800
+                    ? FontWeight.w600
                     : FontWeight.w600,
               ),
               onSelected: (selected) => onChanged(choice, selected),
@@ -1047,7 +1047,7 @@ class _InstitutionPriceConfiguration extends StatelessWidget {
         activeThumbColor: ProColors.primary,
         title: const Text(
           'Publier les tarifs',
-          style: TextStyle(color: ProColors.ink, fontWeight: FontWeight.w800),
+          style: TextStyle(color: ProColors.ink, fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
           published
@@ -1228,7 +1228,7 @@ class _AppointmentModeSetting extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     color: ProColors.ink,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1318,7 +1318,7 @@ class _AvailabilityConfigurationEditor extends StatelessWidget {
     children: [
       const Text(
         'Jours disponibles',
-        style: TextStyle(color: ProColors.ink, fontWeight: FontWeight.w800),
+        style: TextStyle(color: ProColors.ink, fontWeight: FontWeight.w600),
       ),
       const SizedBox(height: 8),
       Wrap(
@@ -1352,7 +1352,7 @@ class _AvailabilityConfigurationEditor extends StatelessWidget {
       const SizedBox(height: 16),
       const Text(
         'Créneau horaire',
-        style: TextStyle(color: ProColors.ink, fontWeight: FontWeight.w800),
+        style: TextStyle(color: ProColors.ink, fontWeight: FontWeight.w600),
       ),
       const SizedBox(height: 8),
       Wrap(

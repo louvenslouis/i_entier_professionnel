@@ -96,45 +96,8 @@ class _ProSignInScreenState extends State<ProSignInScreen> {
 
 class _Backdrop extends StatelessWidget {
   const _Backdrop();
-
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF082F39), Color(0xFF075B63)],
-      ),
-    ),
-    child: Stack(
-      children: [
-        Positioned(
-          right: -120,
-          top: -130,
-          child: Container(
-            width: 360,
-            height: 360,
-            decoration: const BoxDecoration(
-              color: Color(0x1FFFF0D4),
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-        Positioned(
-          left: -90,
-          bottom: -170,
-          child: Container(
-            width: 420,
-            height: 420,
-            decoration: const BoxDecoration(
-              color: Color(0x1400D5C6),
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) => const ColoredBox(color: ProColors.navy);
 }
 
 class _SignInStory extends StatelessWidget {
@@ -153,7 +116,7 @@ class _SignInStory extends StatelessWidget {
           color: Colors.white,
           fontSize: 44,
           height: 1.08,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w700,
           letterSpacing: -1.5,
         ),
       ),
@@ -236,7 +199,7 @@ class _SignInCard extends StatelessWidget {
     padding: const EdgeInsets.all(30),
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(20),
       boxShadow: const [
         BoxShadow(
           color: Color(0x3500161C),
@@ -266,7 +229,7 @@ class _SignInCard extends StatelessWidget {
           'Bienvenue dans votre espace professionnel',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             color: ProColors.ink,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
             height: 1.2,
           ),
         ),

@@ -29,7 +29,7 @@ class InsuranceCoverageValidationScreen extends StatelessWidget {
               style: TextStyle(
                 color: ProColors.ink,
                 fontSize: 20,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
               ),
             ),
             SizedBox(height: 8),
@@ -73,7 +73,7 @@ class InsuranceCoverageValidationScreen extends StatelessWidget {
                         style: TextStyle(
                           color: ProColors.ink,
                           fontSize: 28,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       SizedBox(height: 6),
@@ -96,7 +96,7 @@ class InsuranceCoverageValidationScreen extends StatelessWidget {
                     '${pending.length} en attente',
                     style: const TextStyle(
                       color: ProColors.primaryDark,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -134,7 +134,7 @@ class InsuranceCoverageValidationScreen extends StatelessWidget {
                 style: TextStyle(
                   color: ProColors.ink,
                   fontSize: 18,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 10),
@@ -296,7 +296,7 @@ class _CoverageReviewCardState extends State<_CoverageReviewCard> {
                     style: const TextStyle(
                       color: ProColors.ink,
                       fontSize: 18,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   Text(

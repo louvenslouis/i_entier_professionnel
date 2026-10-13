@@ -37,6 +37,49 @@ class ProDashboardScreen extends StatefulWidget {
 
 class _ProDashboardScreenState extends State<ProDashboardScreen> {
   int _selectedIndex = 0;
+  final Set<int> _visitedSections = {0};
+
+  void _selectSection(int index) => setState(() {
+    _selectedIndex = index;
+    _visitedSections.add(index);
+  });
+
+  Future<void> _openMore() async {
+    final professional =
+        widget.profile.accountType == ProviderAccountType.professional;
+    final sections = <(int, IconData, String)>[
+      if (professional) ...[
+        (2, Icons.spa_outlined, 'Médecine traditionnelle'),
+        (3, Icons.domain_outlined, 'Mon institution'),
+        (4, Icons.verified_user_outlined, 'Couvertures médicales'),
+      ],
+      (professional ? 5 : 2, Icons.local_shipping_outlined, 'Clinique Mobile'),
+    ];
+    final selected = await showModalBottomSheet<int>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final section in sections)
+                ListTile(
+                  selected: _selectedIndex == section.$1,
+                  selectedTileColor: ProColors.primarySoft,
+                  leading: Icon(section.$2),
+                  title: Text(section.$3),
+                  trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+                  onTap: () => Navigator.pop(context, section.$1),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected != null && mounted) _selectSection(selected);
+  }
+
   bool _updating = false;
   late final ProfessionalAppointmentRepository _appointmentRepository =
       widget.appointmentRepository ??
@@ -98,7 +141,7 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
       final isProfessional =
           widget.profile.accountType == ProviderAccountType.professional;
       final clinicIndex = isProfessional ? 5 : 2;
-      final content = switch (_selectedIndex) {
+      Widget contentFor(int index) => switch (index) {
         0 => _DashboardOverview(
           profile: widget.profile,
           updating: _updating,
@@ -122,7 +165,7 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
           profile: widget.profile,
           repository: _insuranceRepository,
         ),
-        _ when _selectedIndex == clinicIndex => MobileClinicScreen(
+        _ when index == clinicIndex => MobileClinicScreen(
           profile: widget.profile,
         ),
         _ => _ProfilePreview(profile: widget.profile, onEdit: _editProfile),
@@ -131,7 +174,11 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
         appBar: desktop
             ? null
             : AppBar(
-                title: const ProBrand(),
+                title: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: ProBrand(),
+                ),
                 actions: [
                   IconButton(
                     tooltip: 'Appels vidéo',
@@ -153,23 +200,38 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
                 _DashboardSidebar(
                   selectedIndex: _selectedIndex,
                   profile: widget.profile,
-                  onSelected: (value) => setState(() => _selectedIndex = value),
+                  onSelected: _selectSection,
                   onSignOut: _signOut,
                 ),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    desktop ? 38 : 18,
-                    desktop ? 34 : 22,
-                    desktop ? 38 : 18,
-                    48,
-                  ),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1120),
-                      child: content,
-                    ),
-                  ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    for (final index in _visitedSections)
+                      Offstage(
+                        offstage: index != _selectedIndex,
+                        child: TickerMode(
+                          enabled: index == _selectedIndex,
+                          child: SingleChildScrollView(
+                            key: PageStorageKey('pro-section-$index'),
+                            padding: EdgeInsets.fromLTRB(
+                              desktop ? 38 : 18,
+                              desktop ? 34 : 22,
+                              desktop ? 38 : 18,
+                              40,
+                            ),
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 1120,
+                                ),
+                                child: contentFor(index),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
@@ -178,47 +240,39 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
         bottomNavigationBar: desktop
             ? null
             : NavigationBar(
-                selectedIndex: _selectedIndex,
-                onDestinationSelected: (value) =>
-                    setState(() => _selectedIndex = value),
-                destinations: [
-                  const NavigationDestination(
-                    icon: Icon(Icons.dashboard_outlined),
-                    selectedIcon: Icon(Icons.dashboard_rounded),
-                    label: 'Tableau de bord',
+                selectedIndex: _selectedIndex <= 1
+                    ? _selectedIndex
+                    : _selectedIndex == (isProfessional ? 6 : 3)
+                    ? 2
+                    : 3,
+                onDestinationSelected: (value) {
+                  if (value == 3) {
+                    _openMore();
+                  } else {
+                    _selectSection(
+                      value == 2 ? (isProfessional ? 6 : 3) : value,
+                    );
+                  }
+                },
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.space_dashboard_outlined),
+                    selectedIcon: Icon(Icons.space_dashboard_rounded),
+                    label: 'Accueil',
                   ),
-                  const NavigationDestination(
+                  NavigationDestination(
                     icon: Icon(Icons.calendar_month_outlined),
                     selectedIcon: Icon(Icons.calendar_month_rounded),
                     label: 'Rendez-vous',
                   ),
-                  if (isProfessional)
-                    const NavigationDestination(
-                      icon: Icon(Icons.spa_outlined),
-                      selectedIcon: Icon(Icons.spa_rounded),
-                      label: 'Traditionnelle',
-                    ),
-                  if (isProfessional)
-                    const NavigationDestination(
-                      icon: Icon(Icons.domain_outlined),
-                      selectedIcon: Icon(Icons.domain_rounded),
-                      label: 'Institution',
-                    ),
-                  if (isProfessional)
-                    const NavigationDestination(
-                      icon: Icon(Icons.verified_user_outlined),
-                      selectedIcon: Icon(Icons.verified_user_rounded),
-                      label: 'Couvertures',
-                    ),
-                  const NavigationDestination(
-                    icon: Icon(Icons.local_shipping_outlined),
-                    selectedIcon: Icon(Icons.local_shipping_rounded),
-                    label: 'Clinique Mobile',
-                  ),
-                  const NavigationDestination(
+                  NavigationDestination(
                     icon: Icon(Icons.badge_outlined),
                     selectedIcon: Icon(Icons.badge_rounded),
                     label: 'Ma fiche',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.grid_view_rounded),
+                    label: 'Plus',
                   ),
                 ],
               ),
@@ -252,73 +306,88 @@ class _DashboardSidebar extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const ProBrand(),
-        const SizedBox(height: 42),
-        _SidebarItem(
-          icon: Icons.videocam_outlined,
-          label: 'Appels vidéo',
-          selected: false,
-          onTap: () => VideoCallHost.open(context),
-        ),
-        const SizedBox(height: 8),
-        _SidebarItem(
-          icon: Icons.dashboard_outlined,
-          label: 'Tableau de bord',
-          selected: selectedIndex == 0,
-          onTap: () => onSelected(0),
-        ),
-        const SizedBox(height: 8),
-        _SidebarItem(
-          icon: Icons.calendar_month_outlined,
-          label: 'Rendez-vous',
-          selected: selectedIndex == 1,
-          onTap: () => onSelected(1),
-        ),
-        const SizedBox(height: 8),
-        if (profile.accountType == ProviderAccountType.professional) ...[
-          _SidebarItem(
-            icon: Icons.spa_outlined,
-            label: 'Médecine traditionnelle',
-            selected: selectedIndex == 2,
-            onTap: () => onSelected(2),
+        const SizedBox(height: 24),
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              const SizedBox(height: 8),
+              _SidebarItem(
+                icon: Icons.videocam_outlined,
+                label: 'Appels vidéo',
+                selected: false,
+                onTap: () => VideoCallHost.open(context),
+              ),
+              const SizedBox(height: 8),
+              _SidebarItem(
+                icon: Icons.dashboard_outlined,
+                label: 'Tableau de bord',
+                selected: selectedIndex == 0,
+                onTap: () => onSelected(0),
+              ),
+              const SizedBox(height: 8),
+              _SidebarItem(
+                icon: Icons.calendar_month_outlined,
+                label: 'Rendez-vous',
+                selected: selectedIndex == 1,
+                onTap: () => onSelected(1),
+              ),
+              const SizedBox(height: 8),
+              if (profile.accountType == ProviderAccountType.professional) ...[
+                _SidebarItem(
+                  icon: Icons.spa_outlined,
+                  label: 'Médecine traditionnelle',
+                  selected: selectedIndex == 2,
+                  onTap: () => onSelected(2),
+                ),
+                const SizedBox(height: 8),
+                _SidebarItem(
+                  icon: Icons.domain_outlined,
+                  label: 'Mon institution',
+                  selected: selectedIndex == 3,
+                  onTap: () => onSelected(3),
+                ),
+                const SizedBox(height: 8),
+                _SidebarItem(
+                  icon: Icons.verified_user_outlined,
+                  label: 'Couvertures médicales',
+                  selected: selectedIndex == 4,
+                  onTap: () => onSelected(4),
+                ),
+                const SizedBox(height: 8),
+              ],
+              _SidebarItem(
+                icon: Icons.local_shipping_outlined,
+                label: 'Clinique Mobile',
+                selected:
+                    selectedIndex ==
+                    (profile.accountType == ProviderAccountType.professional
+                        ? 5
+                        : 2),
+                onTap: () => onSelected(
+                  profile.accountType == ProviderAccountType.professional
+                      ? 5
+                      : 2,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _SidebarItem(
+                icon: Icons.badge_outlined,
+                label: 'Ma fiche publique',
+                selected:
+                    selectedIndex ==
+                    (profile.accountType == ProviderAccountType.professional
+                        ? 6
+                        : 3),
+                onTap: () => onSelected(
+                  profile.accountType == ProviderAccountType.professional
+                      ? 6
+                      : 3,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          _SidebarItem(
-            icon: Icons.domain_outlined,
-            label: 'Mon institution',
-            selected: selectedIndex == 3,
-            onTap: () => onSelected(3),
-          ),
-          const SizedBox(height: 8),
-          _SidebarItem(
-            icon: Icons.verified_user_outlined,
-            label: 'Couvertures médicales',
-            selected: selectedIndex == 4,
-            onTap: () => onSelected(4),
-          ),
-          const SizedBox(height: 8),
-        ],
-        _SidebarItem(
-          icon: Icons.local_shipping_outlined,
-          label: 'Clinique Mobile',
-          selected:
-              selectedIndex ==
-              (profile.accountType == ProviderAccountType.professional ? 5 : 2),
-          onTap: () => onSelected(
-            profile.accountType == ProviderAccountType.professional ? 5 : 2,
-          ),
         ),
-        const SizedBox(height: 8),
-        _SidebarItem(
-          icon: Icons.badge_outlined,
-          label: 'Ma fiche publique',
-          selected:
-              selectedIndex ==
-              (profile.accountType == ProviderAccountType.professional ? 6 : 3),
-          onTap: () => onSelected(
-            profile.accountType == ProviderAccountType.professional ? 6 : 3,
-          ),
-        ),
-        const Spacer(),
         const Divider(color: ProColors.border),
         const SizedBox(height: 10),
         Row(
@@ -335,7 +404,7 @@ class _DashboardSidebar extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: ProColors.ink,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
@@ -375,7 +444,7 @@ class _SidebarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: selected ? ProColors.primarySoft : Colors.transparent,
+    color: selected ? ProColors.primary : Colors.transparent,
     borderRadius: BorderRadius.circular(13),
     child: InkWell(
       onTap: onTap,
@@ -386,7 +455,7 @@ class _SidebarItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: selected ? ProColors.primary : ProColors.muted,
+              color: selected ? Colors.white : ProColors.muted,
               size: 21,
             ),
             const SizedBox(width: 12),
@@ -396,7 +465,7 @@ class _SidebarItem extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: selected ? ProColors.primaryDark : ProColors.muted,
+                  color: selected ? Colors.white : ProColors.ink,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -438,11 +507,6 @@ class _DashboardOverview extends StatelessWidget {
                   'Bonjour, ${firstName(profile.displayName)}',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Voici l’état de votre présence sur i-ENTIER.',
-                  style: TextStyle(color: ProColors.muted, fontSize: 16),
-                ),
               ],
             ),
           ),
@@ -476,26 +540,29 @@ class _DashboardOverview extends StatelessWidget {
                   accent: ProColors.primary,
                 ),
               ),
-              SizedBox(
-                width: width,
-                child: _MetricCard(
-                  icon: Icons.visibility_outlined,
-                  value: profile.isVisible ? 'Visible' : 'Masquée',
-                  label: 'Fiche dans l’annuaire',
-                  accent: const Color(0xFF6D55C7),
+              if (columns > 1) ...[
+                SizedBox(
+                  width: width,
+                  child: _MetricCard(
+                    icon: Icons.visibility_outlined,
+                    value: profile.isVisible ? 'Visible' : 'Masquée',
+                    label: 'Fiche dans l’annuaire',
+                    accent: ProColors.primaryDark,
+                  ),
                 ),
-              ),
-              SizedBox(
-                width: width,
-                child: _MetricCard(
-                  icon: Icons.event_available_outlined,
-                  value: profile.available ? 'Disponible' : 'Indisponible',
-                  label: profile.accountType == ProviderAccountType.professional
-                      ? 'Statut patient'
-                      : 'Accueil du public',
-                  accent: ProColors.success,
+                SizedBox(
+                  width: width,
+                  child: _MetricCard(
+                    icon: Icons.event_available_outlined,
+                    value: profile.available ? 'Disponible' : 'Indisponible',
+                    label:
+                        profile.accountType == ProviderAccountType.professional
+                        ? 'Statut patient'
+                        : 'Accueil du public',
+                    accent: ProColors.success,
+                  ),
                 ),
-              ),
+              ],
             ],
           );
         },
@@ -581,7 +648,7 @@ class _VerificationBanner extends StatelessWidget {
                   status.label,
                   style: TextStyle(
                     color: color,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                     fontSize: 16,
                   ),
                 ),
@@ -633,7 +700,7 @@ class _MetricCard extends StatelessWidget {
                 style: const TextStyle(
                   color: ProColors.ink,
                   fontSize: 18,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 2),
@@ -672,7 +739,7 @@ class _PresenceControls extends StatelessWidget {
           style: TextStyle(
             color: ProColors.ink,
             fontSize: 18,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 5),
@@ -750,7 +817,7 @@ class _ControlSwitch extends StatelessWidget {
               title,
               style: const TextStyle(
                 color: ProColors.ink,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
               ),
             ),
             Text(
@@ -784,7 +851,7 @@ class _ProfileSummary extends StatelessWidget {
                 style: TextStyle(
                   color: ProColors.ink,
                   fontSize: 18,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
@@ -913,7 +980,7 @@ class _ProfilePreview extends StatelessWidget {
                           style: const TextStyle(
                             color: ProColors.ink,
                             fontSize: 23,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(height: 5),
@@ -947,7 +1014,7 @@ class _ProfilePreview extends StatelessWidget {
                     style: TextStyle(
                       color: ProColors.ink,
                       fontSize: 17,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1094,7 +1161,7 @@ class InitialsAvatar extends StatelessWidget {
       style: TextStyle(
         color: Colors.white,
         fontSize: size * .28,
-        fontWeight: FontWeight.w900,
+        fontWeight: FontWeight.w700,
       ),
     ),
   );
@@ -1118,7 +1185,7 @@ class _MiniStatus extends StatelessWidget {
       style: TextStyle(
         color: active ? ProColors.success : ProColors.muted,
         fontSize: 11,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w600,
       ),
     ),
   );

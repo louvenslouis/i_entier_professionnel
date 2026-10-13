@@ -214,7 +214,7 @@ class _CurrentInstitutionCard extends StatelessWidget {
                 style: const TextStyle(
                   color: ProColors.ink,
                   fontSize: 17,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -279,7 +279,7 @@ class _InstitutionResultCard extends StatelessWidget {
                 style: const TextStyle(
                   color: ProColors.ink,
                   fontSize: 16,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               if (institution.type.isNotEmpty) ...[
@@ -363,7 +363,7 @@ class _InstitutionAvatar extends StatelessWidget {
         value,
         style: const TextStyle(
           color: Colors.white,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -394,7 +394,7 @@ class _SearchMessage extends StatelessWidget {
               title,
               style: const TextStyle(
                 color: ProColors.ink,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 4),

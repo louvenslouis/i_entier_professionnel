@@ -562,4 +562,65 @@ void main() {
       'video': true,
     });
   });
+  testWidgets('le menu mobile conserve la recherche de l’institution', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      app(
+        ProDashboardScreen(
+          profile: profile(status: ProviderVerificationStatus.approved),
+          repository: FakeProfessionalRepository(),
+          appointmentRepository: FakeAppointmentRepository([]),
+        ),
+      ),
+    );
+    expect(find.byType(NavigationDestination), findsNWidgets(4));
+    await tester.tap(find.text('Plus'));
+    await tester.pumpAndSettle();
+    expect(find.text('Clinique Mobile'), findsOneWidget);
+    expect(find.text('Couvertures médicales'), findsOneWidget);
+    await tester.tap(find.text('Mon institution'));
+    await tester.pumpAndSettle();
+    final search = find.byKey(const ValueKey('institution-search-field'));
+    await tester.enterText(search, 'Espoir');
+    await tester.tap(find.text('Accueil'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Plus'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mon institution'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(search).controller?.text, 'Espoir');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'le tableau de bord reste utilisable à 320 pixels et texte agrandi',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 640));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildProTheme(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(1.6)),
+            child: child!,
+          ),
+          home: ProDashboardScreen(
+            profile: profile(status: ProviderVerificationStatus.approved),
+            repository: FakeProfessionalRepository(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Plus'));
+      await tester.pumpAndSettle();
+      expect(find.text('Mon institution'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

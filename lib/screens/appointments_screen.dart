@@ -128,7 +128,7 @@ class _ProAppointmentsScreenState extends State<ProAppointmentsScreen> {
               children: [
                 Text(
                   appointment.patientName,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 14),
                 OutlinedButton.icon(
@@ -495,7 +495,7 @@ class _AppointmentRequestCard extends StatelessWidget {
                   _initials(appointment.patientName),
                   style: const TextStyle(
                     color: ProColors.primary,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -509,7 +509,7 @@ class _AppointmentRequestCard extends StatelessWidget {
                       style: const TextStyle(
                         color: ProColors.ink,
                         fontSize: 17,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     Text(
@@ -530,7 +530,7 @@ class _AppointmentRequestCard extends StatelessWidget {
                   style: TextStyle(
                     color: statusColor,
                     fontSize: 11,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -693,7 +693,7 @@ class _AppointmentsMessage extends StatelessWidget {
             style: const TextStyle(
               color: ProColors.ink,
               fontSize: 17,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 5),

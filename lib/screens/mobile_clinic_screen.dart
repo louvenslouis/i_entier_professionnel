@@ -248,7 +248,7 @@ class _ClinicWelcome extends StatelessWidget {
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             color: ProColors.ink,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 9),
@@ -349,7 +349,7 @@ class _ClinicHeader extends StatelessWidget {
                         style: const TextStyle(
                           color: ProColors.ink,
                           fontSize: 21,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       _ClinicStatusBadge(status: clinic.status),
@@ -380,7 +380,7 @@ class _ClinicHeader extends StatelessWidget {
             onChanged: saving ? null : onPublishedChanged,
             title: const Text(
               'Visible dans l’application communautaire',
-              style: TextStyle(fontWeight: FontWeight.w800),
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
             subtitle: const Text(
               'Les patients peuvent consulter les tournées et réserver.',
@@ -392,7 +392,7 @@ class _ClinicHeader extends StatelessWidget {
             onChanged: saving ? null : onDeployedChanged,
             title: const Text(
               'Clinique actuellement déployée',
-              style: TextStyle(fontWeight: FontWeight.w800),
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
             subtitle: const Text(
               'Affiche un signal de disponibilité immédiate à la communauté.',
@@ -590,7 +590,7 @@ class _ClinicStaffSection extends StatelessWidget {
           ),
           title: Text(
             member.fullName,
-            style: const TextStyle(fontWeight: FontWeight.w800),
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           subtitle: Text(
             member.licenseNumber.isEmpty
@@ -649,7 +649,7 @@ class _ClinicServicesSection extends StatelessWidget {
       ),
       title: Text(
         service.name,
-        style: const TextStyle(fontWeight: FontWeight.w800),
+        style: const TextStyle(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         '${service.durationMinutes} min${service.description.isEmpty ? '' : ' · ${service.description}'}',
@@ -658,7 +658,7 @@ class _ClinicServicesSection extends StatelessWidget {
           ? null
           : Text(
               '${service.priceHtg!.toStringAsFixed(0)} HTG',
-              style: const TextStyle(fontWeight: FontWeight.w900),
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
     ),
   );
@@ -709,7 +709,7 @@ class _ClinicToursSection extends StatelessWidget {
       ),
       title: Text(
         tour.zoneName,
-        style: const TextStyle(fontWeight: FontWeight.w800),
+        style: const TextStyle(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         '${_date(tour.startsAt)} – ${_date(tour.endsAt)}\n${tour.locationLabel} · ${tour.dailySchedule}',
@@ -764,7 +764,7 @@ class _ClinicAppointmentsSection extends StatelessWidget {
                     ),
                     title: Text(
                       appointment.patientName,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     subtitle: Text(
                       '${appointment.serviceName}\n${_dateTime(appointment.scheduledAt)} · ${appointment.location}',
@@ -828,7 +828,7 @@ class _ClinicHistorySection extends StatelessWidget {
       ),
       title: Text(
         intervention.serviceName,
-        style: const TextStyle(fontWeight: FontWeight.w800),
+        style: const TextStyle(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         '${_dateTime(intervention.interventionAt)}${intervention.notes.isEmpty ? '' : '\n${intervention.notes}'}',
@@ -836,7 +836,7 @@ class _ClinicHistorySection extends StatelessWidget {
       trailing: Text(
         '${intervention.beneficiariesCount}\nbénéficiaire${intervention.beneficiariesCount > 1 ? 's' : ''}',
         textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
       ),
     ),
   );
@@ -1658,7 +1658,7 @@ class _FormHeading extends StatelessWidget {
     text,
     style: const TextStyle(
       color: ProColors.primaryDark,
-      fontWeight: FontWeight.w900,
+      fontWeight: FontWeight.w700,
     ),
   );
 }
@@ -1740,7 +1740,7 @@ class _FeaturePill extends StatelessWidget {
           style: const TextStyle(
             color: ProColors.primaryDark,
             fontSize: 12,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -1778,7 +1778,7 @@ class _ClinicStatusBadge extends StatelessWidget {
         style: TextStyle(
           color: color,
           fontSize: 11,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -1836,7 +1836,7 @@ class _WorkflowStep extends StatelessWidget {
                           number,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                 ),
@@ -1854,7 +1854,7 @@ class _WorkflowStep extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 3),
                   Text(detail),
@@ -1881,7 +1881,7 @@ class _TourStatus extends StatelessWidget {
     },
     style: const TextStyle(
       color: ProColors.primary,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w600,
     ),
   );
 }
@@ -1899,7 +1899,7 @@ class _AppointmentStatus extends StatelessWidget {
     style: TextStyle(
       color: status == 'confirmed' ? ProColors.success : ProColors.primary,
       fontSize: 11,
-      fontWeight: FontWeight.w900,
+      fontWeight: FontWeight.w700,
     ),
   );
 }

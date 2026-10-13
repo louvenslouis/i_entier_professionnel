@@ -230,7 +230,7 @@ class _TraditionalHeader extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 23,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               SizedBox(height: 7),
@@ -381,7 +381,7 @@ class _EnrollmentFormState extends State<_EnrollmentForm> {
                 setState(() => _scopeAccepted = value == true),
             title: const Text(
               'Je m’engage à ne poser aucun diagnostic médical et à ne prescrire aucun médicament.',
-              style: TextStyle(fontWeight: FontWeight.w800),
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
           const SizedBox(height: 10),
@@ -456,7 +456,7 @@ class _StatusPanel extends StatelessWidget {
                       style: TextStyle(
                         color: color,
                         fontSize: 18,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     Text(
@@ -472,7 +472,7 @@ class _StatusPanel extends StatelessWidget {
                   style: const TextStyle(
                     color: ProColors.primaryDark,
                     fontSize: 22,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
             ],
@@ -490,7 +490,7 @@ class _StatusPanel extends StatelessWidget {
               onChanged: busy ? null : onAvailabilityChanged,
               title: const Text(
                 'Disponibilité en temps réel',
-                style: TextStyle(fontWeight: FontWeight.w900),
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: const Text(
                 'Les patients voient immédiatement votre statut.',
@@ -709,7 +709,7 @@ class _RecommendationPanelState extends State<_RecommendationPanel> {
           style: TextStyle(
             color: ProColors.ink,
             fontSize: 18,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 14),
@@ -770,7 +770,7 @@ class _RecommendationPanelState extends State<_RecommendationPanel> {
           ),
           title: const Text(
             'Ajouter un rappel personnalisé',
-            style: TextStyle(fontWeight: FontWeight.w800),
+            style: TextStyle(fontWeight: FontWeight.w600),
           ),
           subtitle: _reminderAt == null
               ? const Text('Le patient recevra le conseil immédiatement.')
@@ -865,7 +865,7 @@ class _OrientationPanelState extends State<_OrientationPanel> {
           style: TextStyle(
             color: ProColors.ink,
             fontSize: 18,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 14),
@@ -935,7 +935,7 @@ class _OrientationPanelState extends State<_OrientationPanel> {
             'Le patient recevra une alerte immédiate vers les services d’urgence.',
             style: TextStyle(
               color: Color(0xFFC9362B),
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -986,7 +986,7 @@ class _ProFeedback extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: ProColors.ink,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 5),
