@@ -1,3 +1,4 @@
+import '../privacy/professional_vault.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/traditional_medicine.dart';
@@ -177,18 +178,19 @@ class SupabaseTraditionalMedicineProfessionalRepository
     required String title,
     required String content,
     DateTime? reminderAt,
-  }) => client
-      .schema('ientier')
-      .from('traditional_prevention_recommendations')
-      .insert({
-        'patient_id': patientId,
-        'practitioner_id': providerId,
-        'recommendation_type': type,
-        'title': title,
-        'content': content,
-        'reminder_at': reminderAt?.toUtc().toIso8601String(),
-        'clinical_scope_acknowledged': true,
-      });
+  }) => ProfessionalVault(client).publishRecord(
+    patientId: patientId,
+    collection: 'traditional_prevention_recommendations',
+    row: {
+      'patient_id': patientId,
+      'practitioner_id': providerId,
+      'recommendation_type': type,
+      'title': title,
+      'content': content,
+      'reminder_at': reminderAt?.toUtc().toIso8601String(),
+      'clinical_scope_acknowledged': true,
+    },
+  );
 
   @override
   Future<void> createOrientation({
@@ -198,12 +200,16 @@ class SupabaseTraditionalMedicineProfessionalRepository
     required String targetName,
     required String reason,
     required String urgency,
-  }) => client.schema('ientier').from('traditional_care_orientations').insert({
-    'patient_id': patientId,
-    'practitioner_id': providerId,
-    'target_type': targetType,
-    'target_name': targetName,
-    'reason': reason,
-    'urgency': urgency,
-  });
+  }) => ProfessionalVault(client).publishRecord(
+    patientId: patientId,
+    collection: 'traditional_care_orientations',
+    row: {
+      'patient_id': patientId,
+      'practitioner_id': providerId,
+      'target_type': targetType,
+      'target_name': targetName,
+      'reason': reason,
+      'urgency': urgency,
+    },
+  );
 }

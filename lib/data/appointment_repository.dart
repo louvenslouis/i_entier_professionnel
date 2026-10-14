@@ -1,3 +1,5 @@
+import '../privacy/professional_vault.dart';
+import '../privacy/vault_crypto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/appointment_request.dart';
@@ -49,6 +51,7 @@ class SupabaseProfessionalAppointmentRepository
     required String responseNote,
   }) async {
     if (status == ProfessionalAppointmentStatus.pending) return;
+    await _sendNote(appointment.id, responseNote);
     await client
         .schema('ientier')
         .rpc(
@@ -57,7 +60,7 @@ class SupabaseProfessionalAppointmentRepository
             'p_appointment_id': appointment.id,
             'p_provider_id': appointment.providerId,
             'p_new_status': status.storageValue,
-            'p_response_note': responseNote.trim(),
+            'p_response_note': responseNote.trim().isEmpty ? '' : '[Chiffré]',
           },
         );
   }
@@ -68,6 +71,7 @@ class SupabaseProfessionalAppointmentRepository
     required DateTime scheduledAt,
     required String responseNote,
   }) async {
+    await _sendNote(appointment.id, responseNote);
     await client
         .schema('ientier')
         .rpc(
@@ -76,9 +80,22 @@ class SupabaseProfessionalAppointmentRepository
             'p_appointment_id': appointment.id,
             'p_provider_id': appointment.providerId,
             'p_scheduled_at': scheduledAt.toUtc().toIso8601String(),
-            'p_response_note': responseNote.trim(),
+            'p_response_note': responseNote.trim().isEmpty ? '' : '[Chiffré]',
           },
         );
+  }
+
+  Future<void> _sendNote(String appointmentId, String note) async {
+    if (note.trim().isEmpty) return;
+    await ProfessionalVault(client).publish(
+      appointment: appointmentId,
+      id: VaultCrypto.newId(),
+      kind: 'diagnosis',
+      payload: {
+        'diagnosis': 'Note de rendez-vous',
+        'observations': note.trim(),
+      },
+    );
   }
 
   @override

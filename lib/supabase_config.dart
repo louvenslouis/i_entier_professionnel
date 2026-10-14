@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseConfig {
+  static bool isInitialized = false;
   static const url = String.fromEnvironment(
     'SUPABASE_URL',
     defaultValue: 'https://dktjnxbtyhxvapyheosh.supabase.co',
@@ -35,6 +36,7 @@ class SupabaseConfig {
 
   static Future<void> initialize() async {
     await Supabase.initialize(url: url, publishableKey: publishableKey);
+    isInitialized = true;
   }
 
   static SupabaseClient get client => Supabase.instance.client;

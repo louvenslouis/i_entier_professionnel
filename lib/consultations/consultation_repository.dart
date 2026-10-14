@@ -1,3 +1,4 @@
+import '../privacy/professional_vault.dart';
 import 'dart:math';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -70,17 +71,7 @@ class SupabaseConsultationRepository implements ConsultationRepository {
   @override
   Future<List<ConsultationDocument>> documents(String appointmentId) async {
     _checkUser();
-    final rows = await client
-        .schema('ientier')
-        .from('consultation_documents')
-        .select(
-          'document_id,patient_name,provider_name,kind,payload,created_at',
-        )
-        .eq('appointment_id', appointmentId)
-        .eq('provider_id', userId)
-        .order('created_at', ascending: false)
-        .limit(100)
-        .timeout(const Duration(seconds: 20));
+    final rows = await ProfessionalVault(client).documents(appointmentId);
     _checkUser();
     return rows.map(ConsultationDocument.fromJson).toList();
   }
@@ -88,18 +79,19 @@ class SupabaseConsultationRepository implements ConsultationRepository {
   @override
   Future<List<ConsultationExam>> examCatalog(String appointmentId) async {
     _checkUser();
+    await ProfessionalVault(client).revalidate(appointmentId);
     final rows = await client
         .schema('ientier')
-        .rpc(
-          'video_consultation_catalog',
-          params: {'p_appointment_id': appointmentId},
-        )
+        .from('laboratory_exam_catalog')
+        .select('exam_id,name,category')
+        .eq('active', true)
+        .order('name')
         .timeout(const Duration(seconds: 20));
     _checkUser();
-    return (rows as List)
+    return rows
         .map(
           (row) => ConsultationExam(
-            id: row['id'] as String,
+            id: row['exam_id'] as String,
             name: row['name'] as String,
             category: row['category'] as String,
           ),
@@ -116,18 +108,12 @@ class SupabaseConsultationRepository implements ConsultationRepository {
   }) async {
     _checkUser();
     try {
-      final row = await client
-          .schema('ientier')
-          .rpc(
-            'publish_video_consultation',
-            params: {
-              'p_appointment_id': appointmentId,
-              'p_request_id': requestId,
-              'p_kind': kind.name,
-              'p_payload': payload,
-            },
-          )
-          .timeout(const Duration(seconds: 30));
+      final row = await ProfessionalVault(client).publish(
+        appointment: appointmentId,
+        id: requestId,
+        kind: kind.name,
+        payload: payload,
+      );
       _checkUser();
       return ConsultationDocument.fromJson(
         Map<String, dynamic>.from(row as Map),

@@ -1,3 +1,4 @@
+import '../privacy/professional_vault.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -205,13 +206,7 @@ class SupabaseVideoCallRepository implements VideoCallRepository {
       throw const VideoCallException('unauthorized');
     }
     if (role != VideoCallRole.provider) return null;
-    final result = await client
-        .schema('ientier')
-        .rpc(
-          'video_patient_details',
-          params: {'p_appointment_id': appointmentId},
-        )
-        .timeout(const Duration(seconds: 20));
+    final result = await ProfessionalVault(client).patientDetails(appointmentId);
     return result == null
         ? null
         : VideoPatientDetails(Map<String, dynamic>.from(result as Map));

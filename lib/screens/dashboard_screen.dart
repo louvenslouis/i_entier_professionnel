@@ -1,3 +1,4 @@
+import '../privacy/professional_vault_page.dart';
 import 'package:flutter/material.dart';
 
 import '../data/appointment_repository.dart';
@@ -171,6 +172,10 @@ class _ProDashboardScreenState extends State<ProDashboardScreen> {
         _ => _ProfilePreview(profile: widget.profile, onEdit: _editProfile),
       };
       return Scaffold(
+        floatingActionButton: SupabaseConfig.isInitialized ? FloatingActionButton(
+          tooltip: 'Dossier autorisé', onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => ProfessionalVaultPage(client: SupabaseConfig.client))),
+          child: const Icon(Icons.lock_open)) : null,
         appBar: desktop
             ? null
             : AppBar(

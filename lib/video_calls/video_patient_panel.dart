@@ -1,3 +1,6 @@
+import '../privacy/professional_vault.dart';
+import '../privacy/professional_vault_page.dart';
+import '../supabase_config.dart';
 import 'package:flutter/material.dart';
 
 import 'video_call_repository.dart';
@@ -28,6 +31,9 @@ class _VideoPatientPanelState extends State<VideoPatientPanel> {
   void initState() {
     super.initState();
     _load();
+    if (SupabaseConfig.isInitialized) {
+      ProfessionalVault(SupabaseConfig.client).addListener(_vaultChanged);
+    }
   }
 
   @override
@@ -37,6 +43,18 @@ class _VideoPatientPanelState extends State<VideoPatientPanel> {
         oldWidget.repository != widget.repository) {
       _load();
     }
+  }
+
+  void _vaultChanged() {
+    if (mounted) setState(_load);
+  }
+
+  @override
+  void dispose() {
+    if (SupabaseConfig.isInitialized) {
+      ProfessionalVault(SupabaseConfig.client).removeListener(_vaultChanged);
+    }
+    super.dispose();
   }
 
   void _load() {
@@ -78,6 +96,22 @@ class _VideoPatientPanelState extends State<VideoPatientPanel> {
               ],
             ),
             const SizedBox(height: 20),
+            if (SupabaseConfig.isInitialized)
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ProfessionalVaultPage(
+                        client: SupabaseConfig.client,
+                        appointmentId: widget.appointmentId,
+                      ),
+                    ),
+                  );
+                  if (mounted) setState(_load);
+                },
+                icon: const Icon(Icons.lock_open),
+                label: const Text('Autorisation du patient'),
+              ),
             if (widget.repository.consultations case final repository?) ...[
               ConsultationActions(
                 repository: repository,

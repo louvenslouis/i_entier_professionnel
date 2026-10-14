@@ -1,3 +1,4 @@
+import '../privacy/vault_access_boundary.dart';
 import 'package:flutter/material.dart';
 
 import 'consultation_document_view.dart';
@@ -127,11 +128,10 @@ Future<void> showConsultationHistory(
   required String patientName,
 }) => showDialog<void>(
   context: context,
-  builder: (_) => _ConsultationHistory(
-    repository: repository,
-    appointmentId: appointmentId,
-    patientName: patientName,
-  ),
+  builder: (_) => repository is SupabaseConsultationRepository
+      ? VaultAccessBoundary(client: repository.client, appointmentId: appointmentId,
+          builder: () => _ConsultationHistory(repository: repository, appointmentId: appointmentId, patientName: patientName))
+      : _ConsultationHistory(repository: repository, appointmentId: appointmentId, patientName: patientName),
 );
 
 class _ConsultationHistory extends StatefulWidget {

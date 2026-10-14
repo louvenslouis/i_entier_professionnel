@@ -1,3 +1,4 @@
+import '../privacy/vault_access_boundary.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -15,12 +16,10 @@ Future<bool?> showConsultationEditor(
 }) => showDialog<bool>(
   context: context,
   barrierDismissible: false,
-  builder: (_) => ConsultationEditor(
-    repository: repository,
-    appointmentId: appointmentId,
-    patientName: patientName,
-    kind: kind,
-  ),
+  builder: (_) => repository is SupabaseConsultationRepository
+      ? VaultAccessBoundary(client: repository.client, appointmentId: appointmentId,
+          builder: () => ConsultationEditor(repository: repository, appointmentId: appointmentId, patientName: patientName, kind: kind))
+      : ConsultationEditor(repository: repository, appointmentId: appointmentId, patientName: patientName, kind: kind),
 );
 
 class ConsultationEditor extends StatefulWidget {
